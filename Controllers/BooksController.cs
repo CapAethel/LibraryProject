@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LibraryProject.Data;
 using LibraryProject.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace LibraryProject.Controllers
 {
@@ -23,8 +25,25 @@ namespace LibraryProject.Controllers
         public async Task<IActionResult> Index()
         {
             var applicationDbContext = _context.Books.Include(b => b.Category);
-            return View(await applicationDbContext.ToListAsync());
+            var books = await applicationDbContext.ToListAsync();
+
+            // Get the current user's role ID from the claims
+            var userRoleId = GetUserRoleId();
+            ViewData["UserRoleId"] = userRoleId;
+
+            return View(books);
         }
+        private int GetUserRoleId()
+        {
+            var userRoleIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            if (int.TryParse(userRoleIdClaim, out var roleId))
+            {
+                return roleId;
+            }
+
+            return 1;
+        }
+
 
         // GET: Books/Details/5
         public async Task<IActionResult> Details(int? id)
