@@ -24,6 +24,10 @@ namespace LibraryProject.Controllers
         // GET: Books
         public async Task<IActionResult> Index()
         {
+            if (!UserIsAuthenticated())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             var applicationDbContext = _context.Books.Include(b => b.Category);
             var books = await applicationDbContext.ToListAsync();
 
@@ -42,6 +46,11 @@ namespace LibraryProject.Controllers
             }
 
             return 1;
+        }
+        private bool UserIsAuthenticated()
+        {
+            // Check if the user is authenticated
+            return User.Identity != null && User.Identity.IsAuthenticated;
         }
 
 
