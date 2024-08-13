@@ -1,0 +1,24 @@
+﻿@if (User.Identity.IsAuthenticated)
+{
+    <form class="navbar-form d-flex align-items-center ml-auto" asp-controller="Account" asp-action="LogOut" method="post" id="logoutForm">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <span class="navbar-text mr-3">Hello, @User.Identity.Name!</span> <!-- Spaced from the logout button -->
+            </li>
+            <li class="nav-item">
+                <button type="submit" class="btn btn-danger">Log Out</button> <!-- Removed navbar-btn to prevent conflict -->
+            </li>
+        </ul>
+    </form>
+}
+else
+{
+    <ul class="navbar-nav d-flex align-items-center ml-auto">
+        <li class="nav-item">
+            <a class="btn btn-outline-secondary mr-2" asp-controller="Account" asp-action="Registration">Registration</a> <!-- Added margin-right -->
+        </li>
+        <li class="nav-item">
+            <a class="btn btn-info" asp-controller="Account" asp-action="Login">Login</a>
+        </li>
+    </ul>
+}

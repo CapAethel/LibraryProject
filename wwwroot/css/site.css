@@ -20,3 +20,6 @@ html {
 body {
   margin-bottom: 60px;
 }
+.navbar-nav .nav-item {
+    margin-right: 10px; /* Adjust the spacing between buttons */
+}
