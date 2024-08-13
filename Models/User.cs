@@ -7,11 +7,19 @@ namespace LibraryProject.Models
     {
         [Key]
         public int UserId { get; set; }
-        public String Name { get; set; }
-        public String Email { get; set; }
+
+        [Required(ErrorMessage = "Name is required")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
-        public String Password { get; set; }
-        public Role Role { get; set; }
+        public string Password { get; set; }
+
         public int RoleId { get; set; }
     }
+
 }
