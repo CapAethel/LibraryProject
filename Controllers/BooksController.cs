@@ -31,6 +31,8 @@ namespace LibraryProject.Controllers
 
             var books = from b in _context.Books.Include(b => b.Category)
                         select b;
+            var categories = await _context.Categories.ToListAsync();
+            ViewBag.Categories = categories;
 
             // Filtering logic
             bool isFiltered = false;
