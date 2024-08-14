@@ -22,7 +22,7 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Books
-        public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor)
+        public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor, int? pageNumber)
         {
             // Sorting parameters and logic
             ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
@@ -31,6 +31,7 @@ namespace LibraryProject.Controllers
 
             var books = from b in _context.Books.Include(b => b.Category)
                         select b;
+
             var categories = await _context.Categories.ToListAsync();
             ViewBag.Categories = categories;
 
@@ -78,11 +79,16 @@ namespace LibraryProject.Controllers
                     break;
             }
 
+            // Get the current user's role ID
             var userRoleId = GetUserRoleId();
             ViewData["UserRoleId"] = userRoleId;
 
-            return View(await books.ToListAsync());
+            // Pagination logic
+            int pageSize = userRoleId == 2 ? 10 : 8; // 10 for admin, 8 for user
+
+            return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
+
 
 
 
@@ -289,37 +295,5 @@ namespace LibraryProject.Controllers
             return _context.Books.AsQueryable();
         }
 
-        public async Task<PaginatedList<Book>> GetBookAsync(string filterField, string filterCriteria, string filterValue,
-                                                        int pageNumber, int pageSize)
-        {
-            var books = GetAll();
-            if (!string.IsNullOrEmpty(filterField))
-            {
-                switch (filterField)
-                {
-                    case "Author":
-                        if (!string.IsNullOrEmpty(filterCriteria))
-                        {
-                            string filterValueLower = filterValue.ToLower();
-                            books = books.Where(b => b.Author.ToLower().Contains(filterValueLower));
-                        }
-                        break;
-                    case "Title":
-                        if (!string.IsNullOrEmpty(filterCriteria))
-                        {
-                            string filterValueLower = filterValue.ToLower();
-                            books = books.Where(b => b.Title.ToLower().Contains(filterValueLower));
-                        }
-                        break;
-                    case "Category":
-                        if (!string.IsNullOrEmpty(filterCriteria))
-                        {
-                            books = books.Where(b => b.Category.CategoryName == filterCriteria);
-                        }
-                        break;
-                }
-            }
-            return await PaginatedList<Book>.CreateAsync(books, pageNumber, pageSize);
-        }
     }
 }
