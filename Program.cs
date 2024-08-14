@@ -1,4 +1,9 @@
 using LibraryProject.Data;
+using LibraryProject.Repositories.Implementation;
+using LibraryProject.Repositories.Interface;
+using LibraryProject.Services.Implementation;
+using LibraryProject.Services.Interface;
+using LibraryProject.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +19,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/LogOut";
     });
+// Register repositories
+builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<ICatetoryRepository, CatetoryRepository>();
 
+// Register services
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,5 +1,4 @@
-﻿@model IEnumerable<Book>
-
+﻿@model PaginatedList<LibraryProject.Models.Book>
 @{
     ViewData["Title"] = "Index";
     var userRoleId = (int)ViewData["UserRoleId"];
@@ -48,7 +47,9 @@
 </form>
 
 
-@if(userRoleId == 2)
+
+@if (userRoleId == 2)
+
 {
     <p>
         <a class="btn btn-primary mb-3" asp-action="Create">Create New</a>
@@ -59,56 +60,94 @@
             <tr>
                 <th>
                     <a asp-action="Index" asp-route-sortOrder="@titleSortParam">
-                        @Html.DisplayNameFor(model => model.Title)
+                        @Html.DisplayNameFor(model => model.FirstOrDefault().Title)
                     </a>
                 </th>
                 <th>
                     <a asp-action="Index" asp-route-sortOrder="@authorSortParam">
-                        @Html.DisplayNameFor(model => model.Author)
+                        @Html.DisplayNameFor(model => model.FirstOrDefault().Author)
                     </a>
                 </th>
                 <th>
                     <a asp-action="Index" asp-route-sortOrder="@categorySortParam">
-                        @Html.DisplayNameFor(model => model.Category.CategoryName)
+                        @Html.DisplayNameFor(model => model.FirstOrDefault().Category.CategoryName)
                     </a>
                 </th>
                 <th>
-                    <a asp-action="Index">
-                        @Html.DisplayNameFor(model => model.Quantity)
-                    </a>
+                    @Html.DisplayNameFor(model => model.FirstOrDefault().Quantity)
                 </th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model)
+
             {
                 <tr>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Title)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Author)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Category.CategoryName)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Quantity)
-                    </td>
+                    <td>@item.Title</td>
+                    <td>@item.Author</td>
+                    <td>@item.Category?.CategoryName</td>
+                    <td>@item.Quantity</td>
                     <td>
                         <a class="btn btn-warning btn-sm" asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                         <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@item.Id">Delete</a> |
-                        <a class="btn btn-info btn-sm" asp-action="Details" asp-route-id="@item.Id">Details</a> 
+                        <a class="btn btn-info btn-sm" asp-action="Details" asp-route-id="@item.Id">Details</a>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
-    <div class="text-center mt-4">
-        <a href="@Url.Action("Index", "Books")" class="btn btn-secondary">Return to Full List</a>
-    </div>
+
+    <!-- Pagination controls -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            @if (Model.HasPreviousPage)
+
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="1">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex - 1)">Previous</a>
+                </li>
+            }
+
+            else
+
+            {
+                <li class="page-item disabled"><span class="page-link">First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            }
+
+            @for (int i = 1; i <= Model.TotalPage; i++)
+
+            {
+                <li class="page-item @(Model.PageIndex == i ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
+                </li>
+            }
+
+            @if (Model.HasNextPage)
+
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex + 1)">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.TotalPage)">Last</a>
+                </li>
+            }
+
+            else
+
+            {
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last</span></li>
+            }
+        </ul>
+    </nav>
 }
+
 else
 {
     <div class="row">
@@ -127,7 +166,53 @@ else
             </div>
         }
     </div>
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            @if (Model.HasPreviousPage)
 
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="1">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex - 1)">Previous</a>
+                </li>
+            }
+
+            else
+
+            {
+                <li class="page-item disabled"><span class="page-link">First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            }
+
+            @for (int i = 1; i <= Model.TotalPage; i++)
+
+            {
+                <li class="page-item @(Model.PageIndex == i ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
+                </li>
+            }
+
+            @if (Model.HasNextPage)
+
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex + 1)">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.TotalPage)">Last</a>
+                </li>
+            }
+
+            else
+
+            {
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last</span></li>
+            }
+        </ul>
+    </nav>
     <style>
         .card-img-top {
             transition: transform 0.2s ease-in-out;
