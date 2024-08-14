@@ -24,32 +24,34 @@ namespace LibraryProject.Controllers
         // GET: Books
         public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor)
         {
-            // Sorting parameters
+            // Sorting parameters and logic
             ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
             ViewData["CategorySortParam"] = sortOrder == "Category" ? "category_desc" : "Category";
 
-            if (!UserIsAuthenticated())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             var books = from b in _context.Books.Include(b => b.Category)
                         select b;
 
-            // Filtering by search criteria
+            // Filtering logic
+            bool isFiltered = false;
             if (!String.IsNullOrEmpty(searchString))
             {
                 books = books.Where(b => b.Title.Contains(searchString));
+                isFiltered = true;
             }
             if (!String.IsNullOrEmpty(searchCategory))
             {
                 books = books.Where(b => b.Category.CategoryName.Contains(searchCategory));
+                isFiltered = true;
             }
             if (!String.IsNullOrEmpty(searchAuthor))
             {
                 books = books.Where(b => b.Author.Contains(searchAuthor));
+                isFiltered = true;
             }
+
+            // Set the ViewData flag
+            ViewData["Filtered"] = isFiltered;
 
             // Sorting logic
             switch (sortOrder)
@@ -74,12 +76,13 @@ namespace LibraryProject.Controllers
                     break;
             }
 
-            // Get the current user's role ID from the claims
             var userRoleId = GetUserRoleId();
             ViewData["UserRoleId"] = userRoleId;
 
             return View(await books.ToListAsync());
         }
+
+
 
 
         private int GetUserRoleId()
@@ -278,6 +281,43 @@ namespace LibraryProject.Controllers
             }
 
             return -1; // Or handle as appropriate
+        }
+        public IQueryable<Book> GetAll()
+        {
+            return _context.Books.AsQueryable();
+        }
+
+        public async Task<PaginatedList<Book>> GetBookAsync(string filterField, string filterCriteria, string filterValue,
+                                                        int pageNumber, int pageSize)
+        {
+            var books = GetAll();
+            if (!string.IsNullOrEmpty(filterField))
+            {
+                switch (filterField)
+                {
+                    case "Author":
+                        if (!string.IsNullOrEmpty(filterCriteria))
+                        {
+                            string filterValueLower = filterValue.ToLower();
+                            books = books.Where(b => b.Author.ToLower().Contains(filterValueLower));
+                        }
+                        break;
+                    case "Title":
+                        if (!string.IsNullOrEmpty(filterCriteria))
+                        {
+                            string filterValueLower = filterValue.ToLower();
+                            books = books.Where(b => b.Title.ToLower().Contains(filterValueLower));
+                        }
+                        break;
+                    case "Category":
+                        if (!string.IsNullOrEmpty(filterCriteria))
+                        {
+                            books = books.Where(b => b.Category.CategoryName == filterCriteria);
+                        }
+                        break;
+                }
+            }
+            return await PaginatedList<Book>.CreateAsync(books, pageNumber, pageSize);
         }
     }
 }

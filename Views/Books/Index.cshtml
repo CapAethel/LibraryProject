@@ -1,4 +1,4 @@
-﻿@model IEnumerable<LibraryProject.Models.Book>
+﻿@model IEnumerable<Book>
 
 @{
     ViewData["Title"] = "Index";
@@ -9,6 +9,45 @@
 }
 
 <h1>Books</h1>
+<form method="get" asp-controller="Books" asp-action="Index">
+    <div class="form-group">
+        <label for="filterField">Select filter field:</label>
+        <select id="filterField" name="filterField" class="form-control">
+            <option value="">None</option>
+            <option value="Title">Title</option>
+            <option value="Author">Author</option>
+            <option value="Category">Category</option>
+        </select>
+    </div>
+
+    <div class="form-group" id="TitleGroup" style="display:none;">
+        <label for="Title">Enter Title:</label>
+        <input type="text" id="TitleInput" name="searchString" class="form-control" placeholder="Enter Title" />
+    </div>
+
+    <div class="form-group" id="AuthorCriteriaGroup" style="display:none;">
+        <label for="Author">Enter Author:</label>
+        <input type="text" id="AuthorInput" name="searchAuthor" class="form-control" placeholder="Enter Author" />
+    </div>
+
+    <div class="form-group" id="CategoryCriteriaGroup" style="display:none;">
+        <label for="CategoryCriteria">Select Category:</label>
+        <select id="CategoryCriteria" name="searchCategory" class="form-control">
+            <option value="">Select a Category</option>
+            @if (ViewBag.Categories != null)
+            {
+                foreach (var category in ViewBag.Categories)
+                {
+                    <option value="@category.CategoryName">@category.CategoryName</option>
+                }
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="filterButton" style="display:none;">Filter</button>
+</form>
+
+
 @if(userRoleId == 2)
 {
     <p>
@@ -66,6 +105,9 @@
             }
         </tbody>
     </table>
+    <div class="text-center mt-4">
+        <a href="@Url.Action("Index", "Books")" class="btn btn-secondary">Return to Full List</a>
+    </div>
 }
 else
 {
@@ -90,8 +132,46 @@ else
             transition: transform 0.2s ease-in-out;
         }
 
-            .card-img-top:hover {
-                transform: scale(1.1);
-            }
+        .card-img-top:hover {
+            transform: scale(1.1);
+        }
     </style>
 }
+
+<script>
+    document.getElementById('filterField').addEventListener('change', function () {
+        var TitleGroup = document.getElementById('TitleGroup');
+        var AuthorCriteriaGroup = document.getElementById('AuthorCriteriaGroup');
+        var CategoryCriteriaGroup = document.getElementById('CategoryCriteriaGroup');
+        var filterButton = document.getElementById('filterButton');
+
+        // Hide all input groups and buttons initially
+        TitleGroup.style.display = 'none';
+        AuthorCriteriaGroup.style.display = 'none';
+        CategoryCriteriaGroup.style.display = 'none';
+        filterButton.style.display = 'none';
+
+        // Show the appropriate input group and buttons based on selection
+        switch (this.value) {
+            case 'Title':
+                TitleGroup.style.display = 'block';
+                filterButton.style.display = 'block';
+                resetButton.style.display = 'block';
+                break;
+            case 'Author':
+                AuthorCriteriaGroup.style.display = 'block';
+                filterButton.style.display = 'block';
+                resetButton.style.display = 'block';
+                break;
+            case 'Category':
+                CategoryCriteriaGroup.style.display = 'block';
+                filterButton.style.display = 'block';
+                resetButton.style.display = 'block';
+                break;
+        }
+    });
+
+    // Trigger the change event to initialize the form based on the current selection
+    document.getElementById('filterField').dispatchEvent(new Event('change'));
+
+</script>
