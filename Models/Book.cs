@@ -15,5 +15,6 @@ namespace LibraryProject.Models
         public Category? Category { get; set; }
         public string? BookDescription { get; set; }
         public string? PictureUrl { get; set; }
+        public int Quantity { get; set; }
     }
 }

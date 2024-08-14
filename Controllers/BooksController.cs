@@ -128,7 +128,7 @@ namespace LibraryProject.Controllers
         // POST: Books/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl")] Book book)
+        public async Task<IActionResult> Create([Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl,Quantity")] Book book)
         {
             if (ModelState.IsValid)
             {
@@ -159,7 +159,7 @@ namespace LibraryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl")] Book book)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl,Quantity")] Book book)
         {
             if (id != book.Id)
             {
