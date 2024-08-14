@@ -9,7 +9,7 @@
 }
 
 <h1>Books</h1>
-<form method="get" asp-controller="Books" asp-action="Index">
+<form method="get" asp-controller="Books" asp-action="Index" style="margin-bottom: 15px;">
     <div class="form-group">
         <label for="filterField">Select filter field:</label>
         <select id="filterField" name="filterField" class="form-control">
@@ -121,6 +121,7 @@ else
                     </a>
                     <div class="card-body text-center">
                         <h5 class="card-title">@item.Title</h5>
+                        <h7 class="card-title" style="color: gray;">Remaining stock: @item.Quantity</h7>
                     </div>
                 </div>
             </div>
