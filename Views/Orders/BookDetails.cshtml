@@ -1,0 +1,24 @@
+﻿@model LibraryProject.Models.Book
+
+@{
+    ViewData["Title"] = "Book Details";
+}
+
+<h1>@Model.Title</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <img src="@Model.PictureUrl" alt="@Model.Title" style="width:100%; height:auto;" class="img-thumbnail" />
+    </div>
+    <div class="col-md-8">
+        <h3>@Model.Title</h3>
+        <p><strong>Author:</strong> @Model.Author</p>
+        <p><strong>Category:</strong> @Model.Category.CategoryName</p>
+        <p><strong>Description:</strong> @Model.BookDescription</p>
+
+        <form asp-controller="Orders" asp-action="CreateOrder" method="post">
+            <input type="hidden" name="bookId" value="@Model.Id" />
+            <button type="submit" class="btn btn-primary">Order Now</button>
+        </form>
+    </div>
+</div>

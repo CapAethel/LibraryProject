@@ -22,21 +22,66 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Books
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor)
         {
+            // Sorting parameters
+            ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+            ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
+            ViewData["CategorySortParam"] = sortOrder == "Category" ? "category_desc" : "Category";
+
             if (!UserIsAuthenticated())
             {
                 return RedirectToAction("Login", "Account");
             }
-            var applicationDbContext = _context.Books.Include(b => b.Category);
-            var books = await applicationDbContext.ToListAsync();
+
+            var books = from b in _context.Books.Include(b => b.Category)
+                        select b;
+
+            // Filtering by search criteria
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                books = books.Where(b => b.Title.Contains(searchString));
+            }
+            if (!String.IsNullOrEmpty(searchCategory))
+            {
+                books = books.Where(b => b.Category.CategoryName.Contains(searchCategory));
+            }
+            if (!String.IsNullOrEmpty(searchAuthor))
+            {
+                books = books.Where(b => b.Author.Contains(searchAuthor));
+            }
+
+            // Sorting logic
+            switch (sortOrder)
+            {
+                case "title_desc":
+                    books = books.OrderByDescending(b => b.Title);
+                    break;
+                case "Author":
+                    books = books.OrderBy(b => b.Author);
+                    break;
+                case "author_desc":
+                    books = books.OrderByDescending(b => b.Author);
+                    break;
+                case "Category":
+                    books = books.OrderBy(b => b.Category.CategoryName);
+                    break;
+                case "category_desc":
+                    books = books.OrderByDescending(b => b.Category.CategoryName);
+                    break;
+                default:
+                    books = books.OrderBy(b => b.Title);
+                    break;
+            }
 
             // Get the current user's role ID from the claims
             var userRoleId = GetUserRoleId();
             ViewData["UserRoleId"] = userRoleId;
 
-            return View(books);
+            return View(await books.ToListAsync());
         }
+
+
         private int GetUserRoleId()
         {
             var userRoleIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
@@ -112,9 +157,6 @@ namespace LibraryProject.Controllers
             return View(book);
         }
 
-        // POST: Books/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl")] Book book)
@@ -185,6 +227,57 @@ namespace LibraryProject.Controllers
         private bool BookExists(int id)
         {
             return _context.Books.Any(e => e.Id == id);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Order(int bookId)
+        {
+            if (!UserIsAuthenticated())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var userId = GetUserId();
+            var book = await _context.Books.FindAsync(bookId);
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            // Check the user's cart and limit it to 5 items
+            var cartCount = await _context.Orders.CountAsync(o => o.UserId == userId);
+            if (cartCount >= 5)
+            {
+                // Optionally show a message to the user
+                return RedirectToAction("Index", "Books");
+            }
+
+            var order = new Order
+            {
+                BookId = bookId,
+                Quantity = 1, // Default quantity
+                UserId = userId,
+                OrderStatus = "Pending",
+                OrderDate = DateTime.UtcNow
+            };
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Index", "Books");
+        }
+
+        private int GetUserId()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out var userId))
+            {
+                return userId;
+            }
+
+            return -1; // Or handle as appropriate
         }
     }
 }

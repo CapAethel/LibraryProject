@@ -3,6 +3,9 @@
 @{
     ViewData["Title"] = "Index";
     var userRoleId = (int)ViewData["UserRoleId"];
+    var titleSortParam = ViewData["TitleSortParam"] as string;
+    var authorSortParam = ViewData["AuthorSortParam"] as string;
+    var categorySortParam = ViewData["CategorySortParam"] as string;
 }
 
 <h1>Books</h1>
@@ -11,17 +14,24 @@
     <p>
         <a class="btn btn-primary mb-3" asp-action="Create">Create New</a>
     </p>
+
     <table class="table">
         <thead>
             <tr>
                 <th>
-                    @Html.DisplayNameFor(model => model.Title)
+                    <a asp-action="Index" asp-route-sortOrder="@titleSortParam">
+                        @Html.DisplayNameFor(model => model.Title)
+                    </a>
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.Author)
+                    <a asp-action="Index" asp-route-sortOrder="@authorSortParam">
+                        @Html.DisplayNameFor(model => model.Author)
+                    </a>
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.Category)
+                    <a asp-action="Index" asp-route-sortOrder="@categorySortParam">
+                        @Html.DisplayNameFor(model => model.Category.CategoryName)
+                    </a>
                 </th>
                 <th></th>
             </tr>
@@ -51,40 +61,29 @@
 }
 else
 {
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-3">
+                <div class="card mb-4 shadow-sm">
+                    <a asp-controller="Orders" asp-action="BookDetails" asp-route-id="@item.Id">
+                        <img class="card-img-top" src="@item.PictureUrl" alt="@item.Title" style="height: 300px; object-fit: cover;">
+                    </a>
+                    <div class="card-body text-center">
+                        <h5 class="card-title">@item.Title</h5>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    @Html.DisplayNameFor(model => model.Title)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.Author)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.Category)
-                </th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Title)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Author)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Category.CategoryName)
-                    </td>
-                    <td>
-                        <a class="btn btn-info btn-sm" asp-action="Details" asp-route-id="@item.Id">Details</a>
-                    </td>
-                </tr>
+    <style>
+        .card-img-top {
+            transition: transform 0.2s ease-in-out;
+        }
+
+            .card-img-top:hover {
+                transform: scale(1.1);
             }
-        </tbody>
-    </table>
+    </style>
 }
