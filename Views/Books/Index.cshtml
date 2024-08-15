@@ -8,28 +8,30 @@
 }
 
 <h1>Books</h1>
+
+
 <form method="get" asp-controller="Books" asp-action="Index" style="margin-bottom: 15px;">
     <div class="form-group">
         <label for="filterField">Select filter field:</label>
         <select id="filterField" name="filterField" class="form-control">
-            <option value="">None</option>
+
             <option value="Title">Title</option>
             <option value="Author">Author</option>
             <option value="Category">Category</option>
         </select>
     </div>
 
-    <div class="form-group" id="TitleGroup" style="display:none;">
+    <div class="form-group" id="TitleGroup" style="margin-bottom: 15px;">
         <label for="Title">Enter Title:</label>
         <input type="text" id="TitleInput" name="searchString" class="form-control" placeholder="Enter Title" />
     </div>
 
-    <div class="form-group" id="AuthorCriteriaGroup" style="display:none;">
+    <div class="form-group" id="AuthorCriteriaGroup" style="margin-bottom: 15px;">
         <label for="Author">Enter Author:</label>
         <input type="text" id="AuthorInput" name="searchAuthor" class="form-control" placeholder="Enter Author" />
     </div>
 
-    <div class="form-group" id="CategoryCriteriaGroup" style="display:none;">
+    <div class="form-group" id="CategoryCriteriaGroup" style="margin-bottom: 15px;">
         <label for="CategoryCriteria">Select Category:</label>
         <select id="CategoryCriteria" name="searchCategory" class="form-control">
             <option value="">Select a Category</option>
@@ -45,6 +47,25 @@
 
     <button type="submit" class="btn btn-primary" id="filterButton" style="display:none;">Filter</button>
 </form>
+
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Book Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- The content will be loaded via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -224,6 +245,9 @@ else
     </style>
 }
 
+<a class="btn btn-outline-secondary" asp-controller="Books" asp-action="Index" >Return to list</a>
+
+@section Scripts {
 <script>
     document.getElementById('filterField').addEventListener('change', function () {
         var TitleGroup = document.getElementById('TitleGroup');
@@ -261,3 +285,22 @@ else
     document.getElementById('filterField').dispatchEvent(new Event('change'));
 
 </script>
+
+<script>
+    $(document).ready(function () {
+        $('#detailsModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var url = button.data('url');
+            var modal = $(this);
+
+            // Load the content into the modal body
+            modal.find('.modal-body').load(url, function (response, status, xhr) {
+                if (status == "error") {
+                    modal.find('.modal-body').html("<p>Error loading details. Please try again.</p>");
+                }
+            });
+        });
+    });
+</script>
+}
+

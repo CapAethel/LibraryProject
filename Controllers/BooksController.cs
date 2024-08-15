@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LibraryProject.Data;
+using LibraryProject.Helpers;
 using LibraryProject.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+
 
 namespace LibraryProject.Controllers
 {
@@ -111,6 +114,7 @@ namespace LibraryProject.Controllers
 
 
         // GET: Books/Details/5
+        
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -126,8 +130,15 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
+
+            if (Request.IsAjaxRequest())
+            {
+                return PartialView("_Details", book);
+            }
+
             return View(book);
         }
+
 
         // GET: Books/Create
         public IActionResult Create()
@@ -150,9 +161,29 @@ namespace LibraryProject.Controllers
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
             return View(book);
         }
+        [HttpPost]
+        public async Task<IActionResult> CreateCategory([FromBody] NewCategoryRequest request) // add duplicate check
+        {
+            if (string.IsNullOrWhiteSpace(request.CategoryName))
+            {
+                return Json(new { success = false });
+            }
+
+            var category = new Category { CategoryName = request.CategoryName };
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, categoryId = category.CategoryId });
+        }
+
+        public class NewCategoryRequest
+        {
+            public string CategoryName { get; set; }
+        }
+
 
         // GET: Books/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int? id) // check quantity negative
         {
             if (id == null)
             {
@@ -192,7 +223,7 @@ namespace LibraryProject.Controllers
                     }
                     else
                     {
-                        throw;
+                        throw; // throw exception
                     }
                 }
                 return RedirectToAction(nameof(Index));

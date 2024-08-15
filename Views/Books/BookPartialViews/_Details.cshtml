@@ -1,0 +1,28 @@
+﻿@model LibraryProject.Models.Book
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Picture on the left -->
+        <div class="col-md-4">
+            <img src="@Model.PictureUrl" class="img-fluid" alt="@Model.Title" style="width: 100px; height: auto; object-fit: cover;" />
+        </div>
+        <!-- Book information on the right -->
+        <div class="col-md-8">
+            <h2>@Model.Title</h2>
+            <hr />
+            <dl class="row">
+                <dt class="col-sm-4">Author</dt>
+                <dd class="col-sm-8">@Model.Author</dd>
+
+                <dt class="col-sm-4">Category</dt>
+                <dd class="col-sm-8">@Model.Category.CategoryName</dd>
+
+                <dt class="col-sm-4">Description</dt>
+                <dd class="col-sm-8">@Model.BookDescription</dd>
+
+                <dt class="col-sm-4">Quantity</dt>
+                <dd class="col-sm-8">@Model.Quantity</dd>
+            </dl>
+        </div>
+    </div>
+</div>

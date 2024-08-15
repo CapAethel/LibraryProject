@@ -61,7 +61,7 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid) // check valid info
             {
                 string hashedPassword = HashPassword(password);
                 var user = _context.Users
@@ -109,7 +109,7 @@ namespace LibraryProject.Controllers
             return RedirectToAction("Login", "Account");
         }
 
-        private string HashPassword(string password)
+        private string HashPassword(string password) // understand hash password
         {
             using (SHA256 sha256Hash = SHA256.Create())
             {

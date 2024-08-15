@@ -10,9 +10,10 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create">
+        <form asp-action="Create" style="margin-bottom: 15px;">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
+            <!-- Existing form fields -->
             <div class="form-group">
                 <label asp-for="Title" class="control-label"></label>
                 <input asp-for="Title" class="form-control" />
@@ -27,8 +28,22 @@
 
             <div class="form-group">
                 <label asp-for="CategoryId" class="control-label">Category</label>
-                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
+                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId" id="CategorySelect">
+                    <option value="">-- Select Category --</option>
+                    <option value="create-new">Create New Category</option>
+                </select>
                 <span asp-validation-for="CategoryId" class="text-danger"></span>
+            </div>
+
+            <!-- New Category Form -->
+            <div id="newCategoryForm" style="display: none;">
+                <div class="form-group">
+                    <label for="NewCategoryName">Category Name</label>
+                    <input type="text" id="NewCategoryName" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <button type="button" id="saveCategoryBtn" class="btn btn-primary">Save New Category</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -42,6 +57,7 @@
                 <input asp-for="PictureUrl" class="form-control" />
                 <span asp-validation-for="PictureUrl" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Quantity" class="control-label"></label>
                 <input asp-for="Quantity" class="form-control" />
@@ -63,4 +79,42 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        document.getElementById('CategorySelect').addEventListener('change', function () {
+            if (this.value === 'create-new') {
+                document.getElementById('newCategoryForm').style.display = 'block';
+            } else {
+                document.getElementById('newCategoryForm').style.display = 'none';
+            }
+        });
+
+        document.getElementById('saveCategoryBtn').addEventListener('click', function () {
+            var categoryName = document.getElementById('NewCategoryName').value;
+            if (categoryName) {
+                fetch('@Url.Action("CreateCategory", "Books")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ categoryName: categoryName })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            var select = document.getElementById('CategorySelect');
+                            var option = document.createElement('option');
+                            option.value = data.categoryId;
+                            option.text = categoryName;
+                            select.add(option);
+                            select.value = data.categoryId;
+                            document.getElementById('newCategoryForm').style.display = 'none';
+                        } else {
+                            alert('Failed to save category. Please try again.');
+                        }
+                    });
+            }
+        });
+    </script>
 }

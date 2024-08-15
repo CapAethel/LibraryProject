@@ -19,6 +19,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/LogOut";
     });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Enforces the Secure attribute
+    options.Cookie.SameSite = SameSiteMode.Strict; // Or Lax, depending on your requirement
+});
 // Register repositories
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<ICatetoryRepository, CatetoryRepository>();

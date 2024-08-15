@@ -215,13 +215,13 @@ namespace LibraryProject.Controllers
                 var userId = GetUserId();
 
                 // Check if the user is authenticated
-                if (userId == null)
+                if (userId == null) // check isvalid
                 {
                     return RedirectToAction("Login", "Account");
                 }
 
                 // Fetch the book from the database
-                var book = await _context.Books.FindAsync(order.BookId);
+                var book = await _context.Books.FindAsync(order.BookId); // move to service
                 if (book == null)
                 {
                     return NotFound();
@@ -272,3 +272,4 @@ namespace LibraryProject.Controllers
         }
     }
 }
+// add 5 order logic
