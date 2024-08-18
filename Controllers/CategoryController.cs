@@ -1,28 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using LibraryProject.Models;
+using LibraryProject.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using LibraryProject.Data;
-using LibraryProject.Models;
+using System.Threading.Tasks;
 
 namespace LibraryProject.Controllers
 {
     public class CategoryController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ICategoryService _categoryService;
 
-        public CategoryController(ApplicationDbContext context)
+        public CategoryController(ICategoryService categoryService)
         {
-            _context = context;
+            _categoryService = categoryService;
         }
 
         // GET: Category
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Categories.ToListAsync());
+            return View(await _categoryService.GetAllCategoriesAsync());
         }
 
         // GET: Category/Details/5
@@ -33,8 +29,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
+            var category = await _categoryService.GetCategoryByIdAsync(id.Value);
             if (category == null)
             {
                 return NotFound();
@@ -43,7 +38,6 @@ namespace LibraryProject.Controllers
             return View(category);
         }
 
-        // GET: Category/Create
         // GET: Category/Create
         public IActionResult Create(string returnUrl = null)
         {
@@ -58,10 +52,8 @@ namespace LibraryProject.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(category);
-                await _context.SaveChangesAsync();
+                await _categoryService.CreateCategoryAsync(category);
 
-                // If returnUrl is provided, redirect to it after creating the category
                 if (!string.IsNullOrEmpty(returnUrl))
                 {
                     return Redirect(returnUrl);
@@ -71,11 +63,8 @@ namespace LibraryProject.Controllers
             }
 
             ViewData["ReturnUrl"] = returnUrl;
-
             return View(category);
         }
-
-
 
         // GET: Category/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -85,7 +74,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _categoryService.GetCategoryByIdAsync(id.Value);
             if (category == null)
             {
                 return NotFound();
@@ -94,8 +83,6 @@ namespace LibraryProject.Controllers
         }
 
         // POST: Category/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("CategoryId,CategoryName")] Category category)
@@ -109,12 +96,11 @@ namespace LibraryProject.Controllers
             {
                 try
                 {
-                    _context.Update(category);
-                    await _context.SaveChangesAsync();
+                    await _categoryService.UpdateCategoryAsync(category);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CategoryExists(category.CategoryId))
+                    if (!await _categoryService.CategoryExistsAsync(category.CategoryId))
                     {
                         return NotFound();
                     }
@@ -136,8 +122,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
+            var category = await _categoryService.GetCategoryByIdAsync(id.Value);
             if (category == null)
             {
                 return NotFound();
@@ -151,19 +136,8 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
-            if (category != null)
-            {
-                _context.Categories.Remove(category);
-            }
-
-            await _context.SaveChangesAsync();
+            await _categoryService.DeleteCategoryAsync(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool CategoryExists(int id)
-        {
-            return _context.Categories.Any(e => e.CategoryId == id);
         }
     }
 }

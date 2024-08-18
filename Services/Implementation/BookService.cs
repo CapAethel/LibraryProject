@@ -1,20 +1,18 @@
-﻿using LibraryProject.Data;
-using LibraryProject.Models;
+﻿using LibraryProject.Models;
 using LibraryProject.Repositories.Interface;
-using LibraryProject.Services.Interfaces;
+using LibraryProject.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LibraryProject.Services.Implementation
-{
+namespace LibraryProject.Services.Implementation { 
     public class BookService : IBookService
     {
         private readonly IBookRepository _bookRepository;
-        private readonly ICatetoryRepository _categoryRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public BookService(IBookRepository bookRepository, ICatetoryRepository categoryRepository)
+        public BookService(IBookRepository bookRepository, ICategoryRepository categoryRepository)
         {
             _bookRepository = bookRepository;
             _categoryRepository = categoryRepository;
@@ -22,46 +20,35 @@ namespace LibraryProject.Services.Implementation
 
         public async Task<PaginatedList<Book>> GetBooksAsync(string sortOrder, string searchString, string searchCategory, string searchAuthor, int pageNumber, int pageSize)
         {
-            var books = _bookRepository.GetAll();
+            // Start by including the related Category entity
+            var booksQuery = _bookRepository.GetAll().Include(b => b.Category);
 
-            // Filtering
+            // Filtering logic
             if (!string.IsNullOrEmpty(searchString))
             {
-                books = books.Where(b => b.Title.Contains(searchString));
+                booksQuery = (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Book, Category?>)booksQuery.Where(b => b.Title.Contains(searchString));
             }
             if (!string.IsNullOrEmpty(searchCategory))
             {
-                books = books.Where(b => b.Category.CategoryName.Contains(searchCategory));
+                booksQuery = (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Book, Category?>)booksQuery.Where(b => b.Category.CategoryName.Contains(searchCategory));
             }
             if (!string.IsNullOrEmpty(searchAuthor))
             {
-                books = books.Where(b => b.Author.Contains(searchAuthor));
+                booksQuery = (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<Book, Category?>)booksQuery.Where(b => b.Author.Contains(searchAuthor));
             }
 
-            // Sorting
-            switch (sortOrder)
+            // Apply sorting
+            var sortedBooksQuery = sortOrder switch
             {
-                case "title_desc":
-                    books = books.OrderByDescending(b => b.Title);
-                    break;
-                case "Author":
-                    books = books.OrderBy(b => b.Author);
-                    break;
-                case "author_desc":
-                    books = books.OrderByDescending(b => b.Author);
-                    break;
-                case "Category":
-                    books = books.OrderBy(b => b.Category.CategoryName);
-                    break;
-                case "category_desc":
-                    books = books.OrderByDescending(b => b.Category.CategoryName);
-                    break;
-                default:
-                    books = books.OrderBy(b => b.Title);
-                    break;
-            }
+                "title_desc" => booksQuery.OrderByDescending(b => b.Title),
+                "Author" => booksQuery.OrderBy(b => b.Author),
+                "author_desc" => booksQuery.OrderByDescending(b => b.Author),
+                "Category" => booksQuery.OrderBy(b => b.Category.CategoryName),
+                "category_desc" => booksQuery.OrderByDescending(b => b.Category.CategoryName),
+                _ => booksQuery.OrderBy(b => b.Title),
+            };
 
-            return await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber, pageSize);
+            return await PaginatedList<Book>.CreateAsync(sortedBooksQuery.AsNoTracking(), pageNumber, pageSize);
         }
 
         public async Task<Book> GetBookByIdAsync(int id)
@@ -69,7 +56,7 @@ namespace LibraryProject.Services.Implementation
             return await _bookRepository.GetByIdAsync(id);
         }
 
-        public async Task AddBookAsync(Book book)
+        public async Task CreateBookAsync(Book book)
         {
             await _bookRepository.CreateAsync(book);
         }
@@ -81,7 +68,11 @@ namespace LibraryProject.Services.Implementation
 
         public async Task DeleteBookAsync(int id)
         {
-            await _bookRepository.DeleteAsync(await _bookRepository.GetByIdAsync(id));
+            var book = await _bookRepository.GetByIdAsync(id);
+            if (book != null)
+            {
+                await _bookRepository.DeleteAsync(book);
+            }
         }
 
         public async Task<bool> BookExistsAsync(int id)
@@ -93,6 +84,6 @@ namespace LibraryProject.Services.Implementation
         {
             return await _categoryRepository.GetAllAsync();
         }
-    }
 
+    }
 }
