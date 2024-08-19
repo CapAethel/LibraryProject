@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using LibraryProject.Models;
+using LibraryProject.Repositories.Interface;
+using LibraryProject.Services.Implementation;
+using LibraryProject.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
-
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using LibraryProject.Data;
-using LibraryProject.Helpers;
-using LibraryProject.Models;
-using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 
 namespace LibraryProject.Controllers
