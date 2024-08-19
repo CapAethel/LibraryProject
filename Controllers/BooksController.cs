@@ -14,84 +14,33 @@ namespace LibraryProject.Controllers
 {
     public class BooksController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IBookService _bookService;
+        private readonly ICategoryService _categoryService;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(IBookService bookService, ICategoryService categoryService)
         {
-            _context = context;
+            _bookService = bookService;
+            _categoryService = categoryService;
         }
 
         // GET: Books
         public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor, int? pageNumber)
         {
-            // Sorting parameters and logic
             ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
             ViewData["CategorySortParam"] = sortOrder == "Category" ? "category_desc" : "Category";
 
-            var books = from b in _context.Books.Include(b => b.Category)
-                        select b;
-
-            var categories = await _context.Categories.ToListAsync();
-            ViewBag.Categories = categories;
-
-            // Filtering logic
-            bool isFiltered = false;
-            if (!String.IsNullOrEmpty(searchString))
-            {
-                books = books.Where(b => b.Title.Contains(searchString));
-                isFiltered = true;
-            }
-            if (!String.IsNullOrEmpty(searchCategory))
-            {
-                books = books.Where(b => b.Category.CategoryName.Contains(searchCategory));
-                isFiltered = true;
-            }
-            if (!String.IsNullOrEmpty(searchAuthor))
-            {
-                books = books.Where(b => b.Author.Contains(searchAuthor));
-                isFiltered = true;
-            }
-
-            // Set the ViewData flag
-            ViewData["Filtered"] = isFiltered;
-
-            // Sorting logic
-            switch (sortOrder)
-            {
-                case "title_desc":
-                    books = books.OrderByDescending(b => b.Title);
-                    break;
-                case "Author":
-                    books = books.OrderBy(b => b.Author);
-                    break;
-                case "author_desc":
-                    books = books.OrderByDescending(b => b.Author);
-                    break;
-                case "Category":
-                    books = books.OrderBy(b => b.Category.CategoryName);
-                    break;
-                case "category_desc":
-                    books = books.OrderByDescending(b => b.Category.CategoryName);
-                    break;
-                default:
-                    books = books.OrderBy(b => b.Title);
-                    break;
-            }
-
-            // Get the current user's role ID
             var userRoleId = GetUserRoleId();
             ViewData["UserRoleId"] = userRoleId;
 
-            // Pagination logic
             int pageSize = userRoleId == 2 ? 10 : 8; // 10 for admin, 8 for user
 
-            return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
+            var books = await _bookService.GetBooksAsync(sortOrder, searchString, searchCategory, searchAuthor, pageNumber ?? 1, pageSize);
+
+            ViewBag.Categories = await _categoryService.GetAllCategoriesAsync();
+
+            return View(books);
         }
-
-
-
-
 
         private int GetUserRoleId()
         {
@@ -103,12 +52,6 @@ namespace LibraryProject.Controllers
 
             return 1;
         }
-        private bool UserIsAuthenticated()
-        {
-            // Check if the user is authenticated
-            return User.Identity != null && User.Identity.IsAuthenticated;
-        }
-
 
         // GET: Books/Details/5
         
@@ -119,9 +62,8 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var book = await _bookService.GetBookByIdAsync(id.Value);
+
             if (book == null)
             {
                 return NotFound();
@@ -138,9 +80,9 @@ namespace LibraryProject.Controllers
 
 
         // GET: Books/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName");
+            ViewData["CategoryId"] = new SelectList(await _bookService.GetCategoriesAsync(), "CategoryId", "CategoryName");
             return View();
         }
 
@@ -151,11 +93,10 @@ namespace LibraryProject.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(book);
-                await _context.SaveChangesAsync();
+                await _bookService.CreateBookAsync(book);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(await _bookService.GetCategoriesAsync(), "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
         [HttpPost]
@@ -187,12 +128,12 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books.FindAsync(id);
+            var book = await _bookService.GetBookByIdAsync(id.Value);
             if (book == null)
             {
                 return NotFound();
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(await _bookService.GetCategoriesAsync(), "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
 
@@ -209,12 +150,11 @@ namespace LibraryProject.Controllers
             {
                 try
                 {
-                    _context.Update(book);
-                    await _context.SaveChangesAsync();
+                    await _bookService.UpdateBookAsync(book);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BookExists(book.Id))
+                    if (!await _bookService.BookExistsAsync(book.Id))
                     {
                         return NotFound();
                     }
@@ -225,7 +165,7 @@ namespace LibraryProject.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(await _bookService.GetCategoriesAsync(), "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
 
@@ -237,9 +177,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var book = await _bookService.GetBookByIdAsync(id.Value);
             if (book == null)
             {
                 return NotFound();
@@ -253,75 +191,8 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book != null)
-            {
-                _context.Books.Remove(book);
-            }
-
-            await _context.SaveChangesAsync();
+            await _bookService.DeleteBookAsync(id);
             return RedirectToAction(nameof(Index));
         }
-
-        private bool BookExists(int id)
-        {
-            return _context.Books.Any(e => e.Id == id);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Order(int bookId)
-        {
-            if (!UserIsAuthenticated())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var userId = GetUserId();
-            var book = await _context.Books.FindAsync(bookId);
-
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            // Check the user's cart and limit it to 5 items
-            var cartCount = await _context.Orders.CountAsync(o => o.UserId == userId);
-            if (cartCount >= 5)
-            {
-                // Optionally show a message to the user
-                return RedirectToAction("Index", "Books");
-            }
-
-            var order = new Order
-            {
-                BookId = bookId,
-                Quantity = 1, // Default quantity
-                UserId = userId,
-                OrderStatus = "Pending",
-                OrderDate = DateTime.UtcNow
-            };
-
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index", "Books");
-        }
-
-        private int GetUserId()
-        {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out var userId))
-            {
-                return userId;
-            }
-
-            return -1; // Or handle as appropriate
-        }
-        public IQueryable<Book> GetAll()
-        {
-            return _context.Books.AsQueryable();
-        }
-
     }
 }
