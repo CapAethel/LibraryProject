@@ -12,9 +12,21 @@ namespace LibraryProject.Models
         [Required]
         public string Author { get; set; }
         public int CategoryId { get; set; }
-        public Category? Category { get; set; }
+        public Category Category { get; set; }
         public string? BookDescription { get; set; }
         public string? PictureUrl { get; set; }
-        public int Quantity { get; set; }
+
+        private int _quantity;
+
+        public int Quantity
+        {
+            get => _quantity;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException("Quantity cannot be negative");
+                _quantity = value;
+            }
+        }
     }
 }

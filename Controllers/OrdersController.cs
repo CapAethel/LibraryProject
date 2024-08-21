@@ -50,8 +50,8 @@ namespace LibraryProject.Controllers
         // GET: Orders/Create
         public IActionResult Create()
         {
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Author");
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "Email");
+            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
+            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "UserId");
             return View();
         }
 
@@ -60,16 +60,16 @@ namespace LibraryProject.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("OrderId,BookId,Quantity,UserId,OrderStatus,OrderDate")] Order order)
+        public async Task<IActionResult> Create([Bind("OrderId,BookId,UserId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
         {
             if (ModelState.IsValid)
             {
                 _context.Add(order);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Cart", "Orders");
             }
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Author", order.BookId);
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "Email", order.UserId);
+            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
+            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "UserId");
             return View(order);
         }
 
@@ -96,7 +96,7 @@ namespace LibraryProject.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("OrderId,BookId,Quantity,UserId,OrderStatus,OrderDate")] Order order)
+        public async Task<IActionResult> Edit(int id, [Bind("OrderId,BookId,UserId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
         {
             if (id != order.OrderId)
             {
@@ -168,90 +168,6 @@ namespace LibraryProject.Controllers
             return _context.Orders.Any(e => e.OrderId == id);
         }
 
-        // GET: Orders/Cart
-        public async Task<IActionResult> Cart()
-        {
-            if (!UserIsAuthenticated())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var userId = GetUserId();
-            var orders = await _context.Orders
-                .Include(o => o.Book)
-                .Where(o => o.UserId == userId)
-                .ToListAsync();
-
-            return View(orders);
-        }
-        private bool UserIsAuthenticated()
-        {
-            // Check if the user is authenticated
-            return User.Identity != null && User.Identity.IsAuthenticated;
-        }
-        private int GetUserId()
-        {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out var userId))
-            {
-                return userId;
-            }
-
-            return -1; // Or handle as appropriate
-        }
-        public IActionResult CreateOrder()
-        {
-            ViewData["Books"] = new SelectList(_context.Books, "Id", "Title");
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOrder(Order order)
-        {
-            if (ModelState.IsValid)
-            {
-                // Get the current user's ID
-                var userId = GetUserId();
-
-                // Check if the user is authenticated
-                if (userId == null)
-                {
-                    return RedirectToAction("Login", "Account");
-                }
-
-                // Fetch the book from the database
-                var book = await _context.Books.FindAsync(order.BookId);
-                if (book == null)
-                {
-                    return NotFound();
-                }
-
-                // Check if the user already has 5 items in their cart
-                var cartCount = await _context.Orders.CountAsync(o => o.UserId == userId);
-                if (cartCount >= 5)
-                {
-                    // Handle cart limit reached (e.g., show a message or redirect)
-                    return RedirectToAction("CartLimitExceeded", "Home");
-                }
-
-                // Create the order
-                order.UserId = userId;
-                order.OrderStatus = "Pending"; // Set default status or handle accordingly
-                order.OrderDate = DateTime.Now;
-
-                _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction("Index", "Books");
-            }
-
-            // Repopulate the books list if the model state is invalid
-            ViewData["Books"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
-            return View(order);
-        }
-
-        // GET: Orders/BookDetails/5
         public async Task<IActionResult> BookDetails(int? id)
         {
             if (id == null)
@@ -270,5 +186,21 @@ namespace LibraryProject.Controllers
 
             return View(book);
         }
+
+        public async Task<IActionResult> Cart()
+        {
+            var applicationDbContext = _context.Orders.Include(o => o.Book).Include(o => o.user);
+            return View(await applicationDbContext.ToListAsync());
+        }
+
+
+
+        private bool UserIsAuthenticated()
+        {
+            // Check if the user is authenticated
+            return User.Identity != null && User.Identity.IsAuthenticated;
+        }
+
+
     }
 }

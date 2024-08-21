@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LibraryProject.Data;
 using LibraryProject.Models;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
 namespace LibraryProject.Controllers
@@ -24,6 +23,10 @@ namespace LibraryProject.Controllers
         // GET: Books
         public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor, int? pageNumber)
         {
+            if (!UserIsAuthenticated())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             // Sorting parameters and logic
             ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
@@ -88,11 +91,6 @@ namespace LibraryProject.Controllers
 
             return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
-
-
-
-
-
         private int GetUserRoleId()
         {
             var userRoleIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
@@ -108,7 +106,6 @@ namespace LibraryProject.Controllers
             // Check if the user is authenticated
             return User.Identity != null && User.Identity.IsAuthenticated;
         }
-
 
         // GET: Books/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -130,9 +127,10 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Books/Create
+        // GET: Books/Create
         public IActionResult Create()
         {
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName");
+            ViewBag.CategoryId = new SelectList(_context.Categories, "CategoryId", "CategoryName");
             return View();
         }
 
@@ -147,9 +145,12 @@ namespace LibraryProject.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
+
+            // Re-populate dropdown list if model state is invalid
+            ViewBag.CategoryId = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
+
 
         // GET: Books/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -164,10 +165,13 @@ namespace LibraryProject.Controllers
             {
                 return NotFound();
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
             return View(book);
         }
 
+        // POST: Books/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl,Quantity")] Book book)
@@ -239,61 +243,5 @@ namespace LibraryProject.Controllers
         {
             return _context.Books.Any(e => e.Id == id);
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Order(int bookId)
-        {
-            if (!UserIsAuthenticated())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var userId = GetUserId();
-            var book = await _context.Books.FindAsync(bookId);
-
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            // Check the user's cart and limit it to 5 items
-            var cartCount = await _context.Orders.CountAsync(o => o.UserId == userId);
-            if (cartCount >= 5)
-            {
-                // Optionally show a message to the user
-                return RedirectToAction("Index", "Books");
-            }
-
-            var order = new Order
-            {
-                BookId = bookId,
-                Quantity = 1, // Default quantity
-                UserId = userId,
-                OrderStatus = "Pending",
-                OrderDate = DateTime.UtcNow
-            };
-
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index", "Books");
-        }
-
-        private int GetUserId()
-        {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out var userId))
-            {
-                return userId;
-            }
-
-            return -1; // Or handle as appropriate
-        }
-        public IQueryable<Book> GetAll()
-        {
-            return _context.Books.AsQueryable();
-        }
-
     }
 }

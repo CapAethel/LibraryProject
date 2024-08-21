@@ -9,42 +9,57 @@
 
 <h1>Books</h1>
 <form method="get" asp-controller="Books" asp-action="Index" style="margin-bottom: 15px;">
-    <div class="form-group">
-        <label for="filterField">Select filter field:</label>
-        <select id="filterField" name="filterField" class="form-control">
-            <option value="">None</option>
-            <option value="Title">Title</option>
-            <option value="Author">Author</option>
-            <option value="Category">Category</option>
-        </select>
-    </div>
+    <div class="form-row">
+        <!-- Filter Type (1/4 width) -->
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="filterField">Select filter field:</label>
+                <select id="filterField" name="filterField" class="form-control">
+                    <option value="Title">Title</option>
+                    <option value="Author">Author</option>
+                    <option value="Category">Category</option>
+                </select>
+            </div>
+        </div>
 
-    <div class="form-group" id="TitleGroup" style="display:none;">
-        <label for="Title">Enter Title:</label>
-        <input type="text" id="TitleInput" name="searchString" class="form-control" placeholder="Enter Title" />
-    </div>
+        <!-- Filter Value (3/4 width) -->
+        <div class="col-md-7">
+            <!-- Title Filter -->
+            <div class="form-group" id="TitleGroup" style="display:none;">
+                <label for="Title">Enter Title:</label>
+                <input type="text" id="TitleInput" name="searchString" class="form-control" placeholder="Enter Title" />
+            </div>
 
-    <div class="form-group" id="AuthorCriteriaGroup" style="display:none;">
-        <label for="Author">Enter Author:</label>
-        <input type="text" id="AuthorInput" name="searchAuthor" class="form-control" placeholder="Enter Author" />
-    </div>
+            <!-- Author Filter -->
+            <div class="form-group" id="AuthorCriteriaGroup" style="display:none;">
+                <label for="Author">Enter Author:</label>
+                <input type="text" id="AuthorInput" name="searchAuthor" class="form-control" placeholder="Enter Author" />
+            </div>
 
-    <div class="form-group" id="CategoryCriteriaGroup" style="display:none;">
-        <label for="CategoryCriteria">Select Category:</label>
-        <select id="CategoryCriteria" name="searchCategory" class="form-control">
-            <option value="">Select a Category</option>
-            @if (ViewBag.Categories != null)
-            {
-                foreach (var category in ViewBag.Categories)
-                {
-                    <option value="@category.CategoryName">@category.CategoryName</option>
-                }
-            }
-        </select>
-    </div>
+            <!-- Category Filter -->
+            <div class="form-group" id="CategoryCriteriaGroup" style="display:none;">
+                <label for="CategoryCriteria">Select Category:</label>
+                <select id="CategoryCriteria" name="searchCategory" class="form-control">
+                    <option value="">Select a Category</option>
+                    @if (ViewBag.Categories != null)
+                    {
+                        foreach (var category in ViewBag.Categories)
+                        {
+                            <option value="@category.CategoryName">@category.CategoryName</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
 
-    <button type="submit" class="btn btn-primary" id="filterButton" style="display:none;">Filter</button>
+        <!-- Submit Button (optional, align on the right) -->
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary" id="filterButton" style="display:none;">Filter</button>
+        </div>
+    </div>
 </form>
+
+
 
 
 
@@ -218,9 +233,9 @@ else
             transition: transform 0.2s ease-in-out;
         }
 
-        .card-img-top:hover {
-            transform: scale(1.1);
-        }
+            .card-img-top:hover {
+                transform: scale(1.1);
+            }
     </style>
 }
 
@@ -259,5 +274,7 @@ else
 
     // Trigger the change event to initialize the form based on the current selection
     document.getElementById('filterField').dispatchEvent(new Event('change'));
+
+
 
 </script>

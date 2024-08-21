@@ -1,30 +1,35 @@
 ﻿@model IEnumerable<LibraryProject.Models.Order>
 
-@{
-    ViewData["Title"] = "Your Cart";
-}
-
-<h1>Your Cart</h1>
+<h2>Your Orders</h2>
 
 <table class="table">
     <thead>
         <tr>
-            <th>Title</th>
-            <th>Author</th>
+            <th>Book Title</th>
             <th>Quantity</th>
             <th>Order Date</th>
+            <th>Return Date</th>
             <th>Status</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var order in Model)
+        @if (Model.Any())
+        {
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Book.Title</td>
+                    <td>@order.Book.Quantity</td>
+                    <td>@order.OrderDate.ToShortDateString()</td>
+                    <td>@order.ReturnDate.ToShortDateString()</td>
+                    <td>@order.OrderStatus</td>
+                </tr>
+            }
+        }
+        else
         {
             <tr>
-                <td>@order.Book.Title</td>
-                <td>@order.Book.Author</td>
-                <td>@order.Quantity</td>
-                <td>@order.OrderDate.ToShortDateString()</td>
-                <td>@order.OrderStatus</td>
+                <td colspan="4">No orders found.</td>
             </tr>
         }
     </tbody>

@@ -8,13 +8,39 @@ namespace LibraryProject.Models
     {
         [Key]
         public int OrderId { get; set; }
+
+        [Required]
         public int BookId { get; set; }
-        public Book Book { get; set; }
-        public int Quantity { get; set; }
-        [ForeignKey(nameof(Order))]
+
+
+        public required Book Book { get; set; }
+
+        [Required]
         public int UserId { get; set; }
-        public User user { get; set; }
-        public string OrderStatus { get; set; } // E.g., "Pending", "Completed", "Canceled"
+
+        public required User user { get; set; }
+
+        private int _quantity;
+
+        public int Quantity
+        {
+            get => _quantity;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException("Quantity cannot be negative");
+                _quantity = value;
+            }
+        }
+
+        [Required]
+        [StringLength(50)]
+        public required string OrderStatus { get; set; } // E.g., "Pending", "Completed", "Canceled"
+
+        [Required]
         public DateTime OrderDate { get; set; }
+
+        [Required]
+        public DateTime ReturnDate { get; set; }
     }
 }

@@ -16,18 +16,18 @@ VALUES
     ('Mythology'),             -- CategoryId = 9
     ('Psychological Fiction'); -- CategoryId = 10
 
-INSERT INTO Books (Title, Author, CategoryId)
+INSERT INTO Books (Title, Author, CategoryId, Quantity)
 VALUES
-    ('The Great Gatsby', 'F. Scott Fitzgerald', 1),
-    ('1984', 'George Orwell', 2),
-    ('To Kill a Mockingbird', 'Harper Lee', 3),
-    ('The Catcher in the Rye', 'J.D. Salinger', 4),
-    ('Pride and Prejudice', 'Jane Austen', 5),
-    ('The Hobbit', 'J.R.R. Tolkien', 6),
-    ('Moby Dick', 'Herman Melville', 7),
-    ('War and Peace', 'Leo Tolstoy', 8),
-    ('The Odyssey', 'Homer', 9),
-    ('Crime and Punishment', 'Fyodor Dostoevsky', 10);
+    ('The Great Gatsby', 'F. Scott Fitzgerald', 1, 10),
+    ('1984', 'George Orwell', 2, 10),
+    ('To Kill a Mockingbird', 'Harper Lee', 3, 10),
+    ('The Catcher in the Rye', 'J.D. Salinger', 4, 10),
+    ('Pride and Prejudice', 'Jane Austen', 5, 10),
+    ('The Hobbit', 'J.R.R. Tolkien', 6, 10),
+    ('Moby Dick', 'Herman Melville', 7, 10),
+    ('War and Peace', 'Leo Tolstoy', 8, 10),
+    ('The Odyssey', 'Homer', 9, 10),
+    ('Crime and Punishment', 'Fyodor Dostoevsky', 10, 10);
 
 INSERT INTO Roles (RoleName)
 VALUES 

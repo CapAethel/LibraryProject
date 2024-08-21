@@ -16,7 +16,7 @@
         <p><strong>Category:</strong> @Model.Category.CategoryName</p>
         <p><strong>Description:</strong> @Model.BookDescription</p>
 
-        <form asp-controller="Orders" asp-action="CreateOrder" method="post">
+        <form asp-controller="Orders" asp-action="Create" method="post">
             <input type="hidden" name="bookId" value="@Model.Id" />
             <button type="submit" class="btn btn-primary">Order Now</button>
         </form>
