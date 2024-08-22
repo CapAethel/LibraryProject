@@ -27,6 +27,7 @@ namespace LibraryProject.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
+
             // Sorting parameters and logic
             ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
@@ -82,6 +83,9 @@ namespace LibraryProject.Controllers
                     break;
             }
 
+            // Order by stock availability (in-stock first, out-of-stock last)
+            books = books.OrderBy(b => b.Quantity > 0 ? 0 : 1).ThenBy(b => b.Title);
+
             // Get the current user's role ID
             var userRoleId = GetUserRoleId();
             ViewData["UserRoleId"] = userRoleId;
@@ -91,6 +95,7 @@ namespace LibraryProject.Controllers
 
             return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
+
         private int GetUserRoleId()
         {
             var userRoleIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;

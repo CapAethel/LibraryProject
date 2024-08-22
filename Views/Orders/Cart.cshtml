@@ -2,34 +2,48 @@
 
 <h2>Your Cart</h2>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Book Title</th>
-            <th>Quantity</th>
-            <th>Order Date</th>
-            <th>Return Date</th>
-            <th>Order Status</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-
-        {
+@if (!Model.Any())
+{
+    <div class="alert alert-info" role="alert">
+        Your cart is empty. Let's find you a good book !
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
             <tr>
-                <td>@item.Book.Title</td>
-                <td>@item.Quantity</td>
-                <td>@item.OrderDate.ToString("dd/MM/yyyy")</td>
-                <td>@item.ReturnDate.ToString("dd/MM/yyyy")</td>
-                <td>@item.OrderStatus</td>
-                <td>
-                    <a class="btn btn-outline-warning" asp-action="Edit" asp-route-id="@item.OrderId">Edit</a> |
-                    <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@item.OrderId">Delete</a>
-                </td>
+                <th>Book Title</th>
+                <th>Quantity</th>
+                <th>Order Date</th>
+                <th>Return Date</th>
+                <th>Order Status</th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Book.Title</td>
+                    <td>@order.Quantity</td>
+                    <td>@order.OrderDate</td>
+                    <td>@order.ReturnDate</td>
+                    <td>@order.OrderStatus</td>
+                    <td>
+                        @if (order.OrderStatus != "Approved" && order.OrderStatus != "Denied")
+                        {
+                            <a asp-action="Edit" asp-route-id="@order.OrderId" class="btn btn-warning">Edit</a>
+                            <form asp-action="Delete" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                                <input type="submit" value="Delete" class="btn btn-danger" />
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
 
-<a asp-action="Create" class="btn btn-primary">Create custom order</a>
+        </tbody>
+    </table>
+}
+
+<a asp-controller="Books" asp-action="Index" class="btn btn-primary">Go to Book List</a>

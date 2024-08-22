@@ -169,10 +169,17 @@ else
         @foreach (var item in Model)
         {
             <div class="col-md-3">
-                <div class="card mb-4 shadow-sm">
-                    <a asp-controller="Orders" asp-action="BookDetails" asp-route-id="@item.Id">
-                        <img class="card-img-top" src="@item.PictureUrl" alt="@item.Title" style="height: 300px; object-fit: cover;">
-                    </a>
+                <div class="card mb-4 shadow-sm @(item.Quantity > 0 ? "" : "out-of-stock")">
+                    @if (item.Quantity > 0)
+                    {
+                        <a asp-controller="Orders" asp-action="BookDetails" asp-route-id="@item.Id">
+                            <img class="card-img-top" src="@item.PictureUrl" alt="@item.Title" style="height: 300px; object-fit: cover;">
+                        </a>
+                    }
+                    else
+                    {
+                        <img class="card-img-top" src="@item.PictureUrl" alt="@item.Title" style="height: 300px; object-fit: cover; opacity: 0.5;" />
+                    }
                     <div class="card-body text-center">
                         <h5 class="card-title">@item.Title</h5>
                         <h7 class="card-title" style="color: gray;">Remaining stock: @item.Quantity</h7>
@@ -181,6 +188,18 @@ else
             </div>
         }
     </div>
+
+    <style>
+        .card.out-of-stock {
+            pointer-events: none; /* Disable all mouse interactions */
+            opacity: 0.6; /* Make the card look disabled */
+        }
+
+            .card.out-of-stock .card-img-top {
+                cursor: not-allowed; /* Change cursor to indicate disabled state */
+            }
+    </style>
+
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
             @if (Model.HasPreviousPage)

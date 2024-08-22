@@ -143,7 +143,9 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _context.Orders
+       .Include(o => o.Book) // Include the related Book entity
+       .FirstOrDefaultAsync(m => m.OrderId == id);
             if (order == null)
             {
                 return NotFound();
@@ -197,9 +199,6 @@ namespace LibraryProject.Controllers
         }
 
 
-        // Method to check if the order exists
-
-
         // GET: Orders/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -225,15 +224,29 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order != null)
+            var order = await _context.Orders
+                .Include(o => o.Book)  // Include Book to access its Quantity
+                .FirstOrDefaultAsync(m => m.OrderId == id);
+
+            if (order == null)
             {
-                _context.Orders.Remove(order);
+                return NotFound();
             }
 
+            // Return the order quantity to the book stock
+            if (order.Book != null)
+            {
+                order.Book.Quantity += order.Quantity;
+                _context.Update(order.Book);
+            }
+
+            // Remove the order
+            _context.Orders.Remove(order);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Cart));
+
+            return RedirectToAction("Cart", "Orders"); // Redirect to the appropriate page
         }
+
 
         private bool OrderExists(int id)
         {
@@ -287,6 +300,37 @@ namespace LibraryProject.Controllers
             return User.Identity != null && User.Identity.IsAuthenticated;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ApproveOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.OrderStatus = "Approved";
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DenyOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.OrderStatus = "Denied";
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
 
     }
 }

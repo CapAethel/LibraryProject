@@ -8,10 +8,10 @@
 
 <form asp-action="Create" method="post" style="margin-bottom: 15px;">
     <div class="form-group" style="margin-bottom: 15px;">
-        <label asp-for="BookId" class="control-label"></label>
+        <label asp-for="BookId" class="control-label">Book Title</label>
         <select asp-for="BookId" class="form-control" asp-items="ViewBag.BookId"></select>
     </div>
-    <div class="form-group">
+    <div class="form-group" style="margin-bottom: 15px;">
         <label asp-for="Quantity" class="control-label"></label>
         <input asp-for="Quantity" class="form-control" />
         <span asp-validation-for="Quantity" class="text-danger"></span>

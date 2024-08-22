@@ -35,7 +35,7 @@ namespace LibraryProject.Models
 
         [Required]
         [StringLength(50)]
-        public required string OrderStatus { get; set; } = "Pending";
+        public required string OrderStatus { get; set; } // E.g., "Pending", "Completed", "Canceled"
 
         [Required]
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
