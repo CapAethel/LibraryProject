@@ -8,6 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using LibraryProject.Data;
 using LibraryProject.Models;
 using System.Security.Claims;
+using Humanizer;
+using static NuGet.Packaging.PackagingConstants;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Buffers.Text;
+using System.Runtime.Intrinsics.X86;
 
 namespace LibraryProject.Controllers
 {
@@ -62,6 +67,10 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("OrderId,BookId,UserId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
         {
+            if (!UserIsAuthenticated())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             if (ModelState.IsValid)
             {
                 _context.Add(order);
@@ -86,8 +95,8 @@ namespace LibraryProject.Controllers
             {
                 return NotFound();
             }
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Author", order.BookId);
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "Email", order.UserId);
+            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
+            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "UserId");
             return View(order);
         }
 
@@ -177,22 +186,27 @@ namespace LibraryProject.Controllers
 
             var book = await _context.Books
                 .Include(b => b.Category) // Ensure Category is included for display
-                .FirstOrDefaultAsync(m => m.Id == id);
-
+            .FirstOrDefaultAsync(m => m.Id == id);
             if (book == null)
             {
                 return NotFound();
             }
-
             return View(book);
         }
 
         public async Task<IActionResult> Cart()
         {
+            // Check if the user is authenticated
+            if (!UserIsAuthenticated())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Retrieve the currently logged-in user's ID from claims
             var applicationDbContext = _context.Orders.Include(o => o.Book).Include(o => o.user);
             return View(await applicationDbContext.ToListAsync());
-        }
 
+        }
 
 
         private bool UserIsAuthenticated()

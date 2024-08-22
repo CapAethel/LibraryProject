@@ -13,12 +13,12 @@ namespace LibraryProject.Models
         public int BookId { get; set; }
 
 
-        public required Book Book { get; set; }
+        public Book? Book { get; set; }
 
         [Required]
         public int UserId { get; set; }
 
-        public required User user { get; set; }
+        public User? user { get; set; }
 
         private int _quantity;
 

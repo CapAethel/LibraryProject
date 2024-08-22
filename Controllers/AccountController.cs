@@ -65,7 +65,7 @@ namespace LibraryProject.Controllers
             {
                 string hashedPassword = HashPassword(password);
                 var user = _context.Users
-                    .FirstOrDefault(u => u.Email == email && u.Password == hashedPassword);
+                             .FirstOrDefault(u => u.Email == email && u.Password == hashedPassword);
 
                 if (user != null)
                 {
@@ -74,6 +74,7 @@ namespace LibraryProject.Controllers
             {
                 new Claim(ClaimTypes.Name, user.Name),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim("UserId", user.UserId.ToString()), // Add user ID to claims
                 new Claim(ClaimTypes.Role, user.RoleId.ToString()) // Or use a role name instead
             };
 
@@ -97,8 +98,10 @@ namespace LibraryProject.Controllers
 
                 ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             }
+
             return View();
         }
+
 
 
         [HttpPost]
