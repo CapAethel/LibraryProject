@@ -24,12 +24,12 @@
                 <td>@item.ReturnDate.ToString("dd/MM/yyyy")</td>
                 <td>@item.OrderStatus</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.OrderId">Edit</a> |
-                    <a asp-action="Delete" asp-route-id="@item.OrderId">Delete</a>
+                    <a class="btn btn-outline-warning" asp-action="Edit" asp-route-id="@item.OrderId">Edit</a> |
+                    <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@item.OrderId">Delete</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-<a asp-action="Create" class="btn btn-primary">Add New Order</a>
+<a asp-action="Create" class="btn btn-primary">Create custom order</a>

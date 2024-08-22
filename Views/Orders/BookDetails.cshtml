@@ -15,6 +15,7 @@
         <p><strong>Author:</strong> @Model.Author</p>
         <p><strong>Category:</strong> @Model.Category.CategoryName</p>
         <p><strong>Description:</strong> @Model.BookDescription</p>
+        <p><strong>Stock:</strong> @Model.Quantity</p>
 
         <form asp-controller="Orders" asp-action="Create" method="post">
             <input type="hidden" name="bookId" value="@Model.Id" />

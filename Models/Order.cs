@@ -20,27 +20,27 @@ namespace LibraryProject.Models
 
         public User? user { get; set; }
 
-        private int _quantity;
+        private int _quantity = 1;
 
         public int Quantity
         {
             get => _quantity;
             set
             {
-                if (value < 0)
-                    throw new ArgumentOutOfRangeException("Quantity cannot be negative");
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException("Quantity invalid");
                 _quantity = value;
             }
         }
 
         [Required]
         [StringLength(50)]
-        public required string OrderStatus { get; set; } // E.g., "Pending", "Completed", "Canceled"
+        public required string OrderStatus { get; set; } = "Pending";
 
         [Required]
-        public DateTime OrderDate { get; set; }
+        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public DateTime ReturnDate { get; set; }
+        public DateTime ReturnDate { get; set; } = DateTime.UtcNow.AddDays(21);
     }
 }

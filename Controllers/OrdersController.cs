@@ -57,8 +57,14 @@ namespace LibraryProject.Controllers
         // GET: Orders/Create
         public IActionResult Create()
         {
+            var order = new Order
+            {
+                OrderStatus = "Pending", // Explicitly setting it here
+                OrderDate = DateTime.UtcNow,
+                ReturnDate = DateTime.UtcNow.AddDays(21)
+            };
             ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
-            return View();
+            return View(order);
         }
 
         // POST: Orders/Create
