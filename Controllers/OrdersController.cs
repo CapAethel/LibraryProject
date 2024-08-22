@@ -87,14 +87,52 @@ namespace LibraryProject.Controllers
 
             if (ModelState.IsValid)
             {
+                // Find the book that is being ordered
+                var book = await _context.Books.FindAsync(order.BookId);
+
+                if (book == null)
+                {
+                    ModelState.AddModelError("BookId", "Book not found.");
+                    PopulateBookSelectList();
+                    return View(order);
+                }
+
+                // Check if the requested quantity is available
+                if (order.Quantity > book.Quantity)
+                {
+                    ModelState.AddModelError("Quantity", "The quantity requested exceeds the available stock.");
+                    PopulateBookSelectList();
+                    return View(order);
+                }
+
+                // Deduct the order quantity from the book's stock
+                book.Quantity -= order.Quantity;
+
+                // Add the order and update the book's stock in the database
+                _context.Update(book);
                 _context.Add(order);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction("Cart", "Orders");
             }
 
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
+            PopulateBookSelectList();
             return View(order);
         }
+
+        private void PopulateBookSelectList()
+        {
+            // Retrieve books and order them, with out-of-stock books at the end
+            var books = _context.Books
+                .OrderBy(b => b.Quantity > 0 ? 0 : 1) // Order by stock availability, in-stock first
+                .ThenBy(b => b.Title) // Order by title for in-stock and out-of-stock separately
+                .ToList();
+
+            // Populate the ViewData with books for the dropdown list
+            ViewData["BookId"] = new SelectList(books, "Id", "Title");
+        }
+
+
 
 
         // GET: Orders/Edit/5
