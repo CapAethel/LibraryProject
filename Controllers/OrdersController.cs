@@ -26,11 +26,13 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Orders
+        // GET: Orders
         public async Task<IActionResult> Index()
         {
             var applicationDbContext = _context.Orders.Include(o => o.Book).Include(o => o.user);
             return View(await applicationDbContext.ToListAsync());
         }
+
 
         // GET: Orders/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -56,7 +58,6 @@ namespace LibraryProject.Controllers
         public IActionResult Create()
         {
             ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "UserId");
             return View();
         }
 
@@ -65,22 +66,30 @@ namespace LibraryProject.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("OrderId,BookId,UserId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
+        public async Task<IActionResult> Create([Bind("OrderId,BookId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
         {
             if (!UserIsAuthenticated())
             {
                 return RedirectToAction("Login", "Account");
             }
+
+            // Retrieve the currently logged-in user's ID from claims
+            var userId = User.FindFirstValue("UserId");
+
+            // Convert userId to integer (assuming it is stored as int in the database)
+            order.UserId = int.Parse(userId);
+
             if (ModelState.IsValid)
             {
                 _context.Add(order);
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Cart", "Orders");
             }
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "UserId");
+
+            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
             return View(order);
         }
+
 
         // GET: Orders/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -95,22 +104,28 @@ namespace LibraryProject.Controllers
             {
                 return NotFound();
             }
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "UserId");
+
+            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
             return View(order);
         }
 
         // POST: Orders/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("OrderId,BookId,UserId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
+        public async Task<IActionResult> Edit(int id, [Bind("OrderId,BookId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
         {
             if (id != order.OrderId)
             {
                 return NotFound();
             }
+
+            // Retrieve the currently logged-in user's ID from claims
+            var userId = User.FindFirstValue("UserId");
+
+            // Convert userId to integer (assuming it is stored as int in the database)
+            order.UserId = int.Parse(userId);
+
+      
 
             if (ModelState.IsValid)
             {
@@ -130,12 +145,16 @@ namespace LibraryProject.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Cart));
             }
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Author", order.BookId);
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "Email", order.UserId);
+
+            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
             return View(order);
         }
+
+
+        // Method to check if the order exists
+
 
         // GET: Orders/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -169,7 +188,7 @@ namespace LibraryProject.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Cart));
         }
 
         private bool OrderExists(int id)
@@ -203,9 +222,18 @@ namespace LibraryProject.Controllers
             }
 
             // Retrieve the currently logged-in user's ID from claims
-            var applicationDbContext = _context.Orders.Include(o => o.Book).Include(o => o.user);
-            return View(await applicationDbContext.ToListAsync());
+            var userId = User.FindFirstValue("UserId");
 
+            // Convert userId to integer (assuming it is stored as int in the database)
+            int userIdInt = int.Parse(userId);
+
+            // Fetch orders that belong to the logged-in user
+            var orders = _context.Orders
+                .Include(o => o.Book)
+                .Include(o => o.user)
+                .Where(o => o.UserId == userIdInt); // Filter by UserId
+
+            return View(await orders.ToListAsync());
         }
 
 

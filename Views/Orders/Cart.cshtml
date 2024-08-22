@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<LibraryProject.Models.Order>
 
-<h2>Your Orders</h2>
+<h2>Your Cart</h2>
 
 <table class="table">
     <thead>
@@ -9,28 +9,27 @@
             <th>Quantity</th>
             <th>Order Date</th>
             <th>Return Date</th>
-            <th>Status</th>
+            <th>Order Status</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
-        @if (Model.Any())
-        {
-            @foreach (var order in Model)
-            {
-                <tr>
-                    <td>@order.Book.Title</td>
-                    <td>@order.Book.Quantity</td>
-                    <td>@order.OrderDate.ToShortDateString()</td>
-                    <td>@order.ReturnDate.ToShortDateString()</td>
-                    <td>@order.OrderStatus</td>
-                </tr>
-            }
-        }
-        else
+        @foreach (var item in Model)
+
         {
             <tr>
-                <td colspan="4">No orders found.</td>
+                <td>@item.Book.Title</td>
+                <td>@item.Quantity</td>
+                <td>@item.OrderDate.ToString("dd/MM/yyyy")</td>
+                <td>@item.ReturnDate.ToString("dd/MM/yyyy")</td>
+                <td>@item.OrderStatus</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.OrderId">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.OrderId">Delete</a>
+                </td>
             </tr>
         }
     </tbody>
 </table>
+
+<a asp-action="Create" class="btn btn-primary">Add New Order</a>
