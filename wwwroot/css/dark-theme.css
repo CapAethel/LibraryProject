@@ -1,0 +1,26 @@
+﻿/* More specific selector */
+body {
+    background-color: #1d1d1d !important; /* Dark background */
+    color: #4ab1ea !important; /* Light text color */
+}
+
+/* Ensure other theme-specific styles */
+.navbar, .dropdown-menu {
+    background-color: #3515ff !important;
+    color: #ffffff !important;
+}
+
+.btn-primary {
+    background-color: #1a73e8 !important;
+    border-color: #1a73e8 !important;
+}
+.navbar-nav .nav-link, /* For links inside the navbar */
+.dropdown-menu .dropdown-item { /* For items inside the dropdown menu */
+    color: #ffffff !important; /* Font color */
+}
+
+    /* Optional: Change font color when hovering over links or dropdown items */
+    .navbar-nav .nav-link:hover,
+    .dropdown-menu .dropdown-item:hover {
+        color: #ffd700 !important; /* Change to desired hover color */
+    }

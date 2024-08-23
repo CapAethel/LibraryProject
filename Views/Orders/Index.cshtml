@@ -1,64 +1,47 @@
 ﻿@model IEnumerable<LibraryProject.Models.Order>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Manage Orders";
 }
 
-<h1>Index</h1>
+<h2>Manage Orders</h2>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Book)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.user)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Quantity)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.OrderStatus)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.OrderDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ReturnDate)
-            </th>
-            <th></th>
+            <th>Order ID</th>
+            <th>Book Title</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Order Date</th>
+            <th>Return Date</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @foreach (var order in Model)
         {
             <tr>
+                <td>@order.OrderId</td>
+                <td>@order.Book.Title</td>
+                <td>@order.Quantity</td>
+                <td>@order.OrderStatus</td>
+                <td>@order.OrderDate.ToShortDateString()</td>
+                <td>@order.ReturnDate.ToShortDateString()</td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Book.Author)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.user.Email)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Quantity)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.OrderStatus)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.OrderDate)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.ReturnDate)
-                </td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.OrderId">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.OrderId">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.OrderId">Delete</a>
+                    @if (order.OrderStatus != "Approved" && order.OrderStatus != "Denied" && order.OrderStatus != "Returned")
+                    {
+                        <form asp-action="ApproveOrder" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                            <input type="submit" value="Approve" class="btn btn-success" />
+                        </form>
+                        <form asp-action="DenyOrder" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                            <input type="submit" value="Deny" class="btn btn-danger" />
+                        </form>
+                    }
+                    else
+                    {
+                        <span>@order.OrderStatus</span>
+                    }
                 </td>
             </tr>
         }

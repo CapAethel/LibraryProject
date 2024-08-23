@@ -27,6 +27,7 @@ namespace LibraryProject.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
+
             // Sorting parameters and logic
             ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
@@ -34,10 +35,8 @@ namespace LibraryProject.Controllers
 
             var books = from b in _context.Books.Include(b => b.Category)
                         select b;
-
             var categories = await _context.Categories.ToListAsync();
             ViewBag.Categories = categories;
-
             // Filtering logic
             bool isFiltered = false;
             if (!String.IsNullOrEmpty(searchString))
@@ -56,9 +55,7 @@ namespace LibraryProject.Controllers
                 isFiltered = true;
             }
 
-            // Set the ViewData flag
-            ViewData["Filtered"] = isFiltered;
-
+            // Sorting logic
             // Sorting logic
             switch (sortOrder)
             {
@@ -72,15 +69,22 @@ namespace LibraryProject.Controllers
                     books = books.OrderByDescending(b => b.Author);
                     break;
                 case "Category":
-                    books = books.OrderBy(b => b.Category.CategoryName);
+                    books = books.OrderBy(b => b.Category.CategoryId);
                     break;
                 case "category_desc":
-                    books = books.OrderByDescending(b => b.Category.CategoryName);
+                    books = books.OrderByDescending(b => b.Category.CategoryId);
                     break;
                 default:
                     books = books.OrderBy(b => b.Title);
                     break;
             }
+
+
+
+            // Combine with stock availability sorting
+            books = books
+                .OrderBy(b => b.Quantity > 0 ? 0 : 1)
+                .ThenBy(b => sortOrder == "title_desc" ? b.Title : b.Author);  // Combine with sorting
 
             // Get the current user's role ID
             var userRoleId = GetUserRoleId();
@@ -90,7 +94,9 @@ namespace LibraryProject.Controllers
             int pageSize = userRoleId == 2 ? 10 : 8; // 10 for admin, 8 for user
 
             return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
+
         }
+
         private int GetUserRoleId()
         {
             var userRoleIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
@@ -165,7 +171,7 @@ namespace LibraryProject.Controllers
             {
                 return NotFound();
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
 
