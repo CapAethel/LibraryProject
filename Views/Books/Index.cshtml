@@ -1,9 +1,13 @@
 ﻿@model PaginatedList<LibraryProject.Models.Book>
 @{
     ViewData["Title"] = "Index";
+
     var userRoleId = (int)ViewData["UserRoleId"];
+
     var titleSortParam = ViewData["TitleSortParam"] as string;
+
     var authorSortParam = ViewData["AuthorSortParam"] as string;
+
     var categorySortParam = ViewData["CategorySortParam"] as string;
 }
 
@@ -42,11 +46,15 @@
                 <select id="CategoryCriteria" name="searchCategory" class="form-control">
                     <option value="">Select a Category</option>
                     @if (ViewBag.Categories != null)
+
                     {
+
                         foreach (var category in ViewBag.Categories)
+
                         {
                             <option value="@category.CategoryName">@category.CategoryName</option>
                         }
+
                     }
                 </select>
             </div>
@@ -64,6 +72,8 @@
 
 
 @if (userRoleId == 2)
+
+
 
 {
     <p>
@@ -97,6 +107,8 @@
         <tbody>
             @foreach (var item in Model)
 
+
+
             {
                 <tr>
                     <td>@item.Title</td>
@@ -118,6 +130,8 @@
         <ul class="pagination justify-content-center">
             @if (Model.HasPreviousPage)
 
+
+
             {
                 <li class="page-item">
                     <a class="page-link" asp-action="Index" asp-route-pageNumber="1">First</a>
@@ -127,7 +141,11 @@
                 </li>
             }
 
+
+
             else
+
+
 
             {
                 <li class="page-item disabled"><span class="page-link">First</span></li>
@@ -136,6 +154,8 @@
 
             @for (int i = 1; i <= Model.TotalPage; i++)
 
+
+
             {
                 <li class="page-item @(Model.PageIndex == i ? "active" : "")">
                     <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
@@ -143,6 +163,8 @@
             }
 
             @if (Model.HasNextPage)
+
+
 
             {
                 <li class="page-item">
@@ -153,7 +175,11 @@
                 </li>
             }
 
+
+
             else
+
+
 
             {
                 <li class="page-item disabled"><span class="page-link">Next</span></li>
@@ -163,20 +189,27 @@
     </nav>
 }
 
+
+
 else
+
 {
     <div class="row">
         @foreach (var item in Model)
+
         {
             <div class="col-md-3">
                 <div class="card mb-4 shadow-sm @(item.Quantity > 0 ? "" : "out-of-stock")">
                     @if (item.Quantity > 0)
+
                     {
                         <a asp-controller="Orders" asp-action="BookDetails" asp-route-id="@item.Id">
                             <img class="card-img-top" src="@item.PictureUrl" alt="@item.Title" style="height: 300px; object-fit: cover;">
                         </a>
                     }
+
                     else
+
                     {
                         <img class="card-img-top" src="@item.PictureUrl" alt="@item.Title" style="height: 300px; object-fit: cover; opacity: 0.5;" />
                     }
@@ -204,6 +237,8 @@ else
         <ul class="pagination justify-content-center">
             @if (Model.HasPreviousPage)
 
+
+
             {
                 <li class="page-item">
                     <a class="page-link" asp-action="Index" asp-route-pageNumber="1">First</a>
@@ -213,7 +248,11 @@ else
                 </li>
             }
 
+
+
             else
+
+
 
             {
                 <li class="page-item disabled"><span class="page-link">First</span></li>
@@ -222,6 +261,8 @@ else
 
             @for (int i = 1; i <= Model.TotalPage; i++)
 
+
+
             {
                 <li class="page-item @(Model.PageIndex == i ? "active" : "")">
                     <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
@@ -229,6 +270,8 @@ else
             }
 
             @if (Model.HasNextPage)
+
+
 
             {
                 <li class="page-item">
@@ -239,7 +282,11 @@ else
                 </li>
             }
 
+
+
             else
+
+
 
             {
                 <li class="page-item disabled"><span class="page-link">Next</span></li>

@@ -1,38 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using LibraryProject.Models;
+using LibraryProject.Repositories.Interface;
+using LibraryProject.Services;
+using LibraryProject.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using LibraryProject.Data;
-using LibraryProject.Models;
-using System.Security.Claims;
-using Humanizer;
-using static NuGet.Packaging.PackagingConstants;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Buffers.Text;
-using System.Runtime.Intrinsics.X86;
 
 namespace LibraryProject.Controllers
 {
     public class OrdersController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IOrderService _orderService;
+        private readonly IBookRepository _bookRepository;
 
-        public OrdersController(ApplicationDbContext context)
+        public OrdersController(IOrderService orderService, IBookRepository bookRepository)
         {
-            _context = context;
+            _orderService = orderService;
+            _bookRepository = bookRepository;
         }
 
-        // GET: Orders
         // GET: Orders
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Orders.Include(o => o.Book).Include(o => o.user);
-            return View(await applicationDbContext.ToListAsync());
+            var orders = await _orderService.GetAllOrdersAsync();
+            return View(orders);
         }
-
 
         // GET: Orders/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -42,10 +38,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Orders
-                .Include(o => o.Book)
-                .Include(o => o.user)
-                .FirstOrDefaultAsync(m => m.OrderId == id);
+            var order = await _orderService.GetOrderByIdAsync(id.Value);
             if (order == null)
             {
                 return NotFound();
@@ -57,19 +50,17 @@ namespace LibraryProject.Controllers
         // GET: Orders/Create
         public IActionResult Create()
         {
+            PopulateBookSelectList();
             var order = new Order
             {
-                OrderStatus = "Pending", // Explicitly setting it here
+                OrderStatus = "Pending",
                 OrderDate = DateTime.UtcNow,
                 ReturnDate = DateTime.UtcNow.AddDays(21)
             };
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title");
             return View(order);
         }
 
         // POST: Orders/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("OrderId,BookId,Quantity,OrderStatus,OrderDate,ReturnDate")] Order order)
@@ -79,41 +70,24 @@ namespace LibraryProject.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Retrieve the currently logged-in user's ID from claims
             var userId = User.FindFirstValue("UserId");
-
-            // Convert userId to integer (assuming it is stored as int in the database)
             order.UserId = int.Parse(userId);
 
             if (ModelState.IsValid)
             {
-                // Find the book that is being ordered
-                var book = await _context.Books.FindAsync(order.BookId);
-
-                if (book == null)
+                try
                 {
-                    ModelState.AddModelError("BookId", "Book not found.");
-                    PopulateBookSelectList();
-                    return View(order);
+                    await _orderService.CreateOrderAsync(order);
+                    return RedirectToAction("Cart", "Orders");
                 }
-
-                // Check if the requested quantity is available
-                if (order.Quantity > book.Quantity)
+                catch (InvalidOperationException ex)
                 {
-                    ModelState.AddModelError("Quantity", "The quantity requested exceeds the available stock.");
-                    PopulateBookSelectList();
-                    return View(order);
+                    ModelState.AddModelError("Quantity", ex.Message);
                 }
-
-                // Deduct the order quantity from the book's stock
-                book.Quantity -= order.Quantity;
-
-                // Add the order and update the book's stock in the database
-                _context.Update(book);
-                _context.Add(order);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction("Cart", "Orders");
+                catch (KeyNotFoundException ex)
+                {
+                    ModelState.AddModelError("BookId", ex.Message);
+                }
             }
 
             PopulateBookSelectList();
@@ -122,18 +96,13 @@ namespace LibraryProject.Controllers
 
         private void PopulateBookSelectList()
         {
-            // Retrieve books and order them, with out-of-stock books at the end
-            var books = _context.Books
-                .OrderBy(b => b.Quantity > 0 ? 0 : 1) // Order by stock availability, in-stock first
-                .ThenBy(b => b.Title) // Order by title for in-stock and out-of-stock separately
+            var books = _bookRepository.GetAll()
+                .OrderBy(b => b.Quantity > 0 ? 0 : 1)
+                .ThenBy(b => b.Title)
                 .ToList();
 
-            // Populate the ViewData with books for the dropdown list
             ViewData["BookId"] = new SelectList(books, "Id", "Title");
         }
-
-
-
 
         // GET: Orders/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -143,15 +112,14 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Orders
-       .Include(o => o.Book) // Include the related Book entity
-       .FirstOrDefaultAsync(m => m.OrderId == id);
+            var order = await _orderService.GetOrderByIdAsync(id.Value);
             if (order == null)
             {
                 return NotFound();
             }
 
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
+            PopulateBookSelectList();
+            ViewData["BookId"] = new SelectList(await _bookRepository.GetAll().ToListAsync(), "Id", "Title", order.BookId);
             return View(order);
         }
 
@@ -165,36 +133,27 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            // Retrieve the currently logged-in user's ID from claims
             var userId = User.FindFirstValue("UserId");
-
-            // Convert userId to integer (assuming it is stored as int in the database)
             order.UserId = int.Parse(userId);
-
-      
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(order);
-                    await _context.SaveChangesAsync();
+                    await _orderService.UpdateOrderAsync(order);
+                    return RedirectToAction(nameof(Cart));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (KeyNotFoundException)
                 {
-                    if (!OrderExists(order.OrderId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return NotFound();
                 }
-                return RedirectToAction(nameof(Cart));
+                catch (InvalidOperationException ex)
+                {
+                    ModelState.AddModelError("Quantity", ex.Message);
+                }
             }
 
-            ViewData["BookId"] = new SelectList(_context.Books, "Id", "Title", order.BookId);
+            ViewData["BookId"] = new SelectList(await _bookRepository.GetAll().ToListAsync(), "Id", "Title", order.BookId);
             return View(order);
         }
 
@@ -207,10 +166,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Orders
-                .Include(o => o.Book)
-                .Include(o => o.user)
-                .FirstOrDefaultAsync(m => m.OrderId == id);
+            var order = await _orderService.GetOrderByIdAsync(id.Value);
             if (order == null)
             {
                 return NotFound();
@@ -224,33 +180,15 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.Book)  // Include Book to access its Quantity
-                .FirstOrDefaultAsync(m => m.OrderId == id);
-
-            if (order == null)
+            try
+            {
+                await _orderService.DeleteOrderAsync(id);
+                return RedirectToAction("Cart", "Orders");
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-
-            // Return the order quantity to the book stock
-            if (order.Book != null && order.OrderStatus == "Pending")
-            {
-                order.Book.Quantity += order.Quantity;
-                _context.Update(order.Book);
-            }
-
-            // Remove the order
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Cart", "Orders"); // Redirect to the appropriate page
-        }
-
-
-        private bool OrderExists(int id)
-        {
-            return _context.Orders.Any(e => e.OrderId == id);
         }
 
         public async Task<IActionResult> BookDetails(int? id)
@@ -260,9 +198,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books
-                .Include(b => b.Category) // Ensure Category is included for display
-            .FirstOrDefaultAsync(m => m.Id == id);
+            var book = await _bookRepository.GetByIdAsync(id.Value);
             if (book == null)
             {
                 return NotFound();
@@ -272,97 +208,68 @@ namespace LibraryProject.Controllers
 
         public async Task<IActionResult> Cart()
         {
-            // Check if the user is authenticated
             if (!UserIsAuthenticated())
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            // Retrieve the currently logged-in user's ID from claims
             var userId = User.FindFirstValue("UserId");
-
-            // Convert userId to integer (assuming it is stored as int in the database)
             int userIdInt = int.Parse(userId);
 
-            // Fetch orders that belong to the logged-in user
-            var orders = _context.Orders
-                .Include(o => o.Book)
-                .Include(o => o.user)
-                .Where(o => o.UserId == userIdInt); // Filter by UserId
+            var orders = await _orderService.GetOrdersByUserIdAsync(userIdInt);
 
-            return View(await orders.ToListAsync());
+            return View(orders);
         }
-
 
         private bool UserIsAuthenticated()
         {
-            // Check if the user is authenticated
             return User.Identity != null && User.Identity.IsAuthenticated;
         }
 
         [HttpPost]
         public async Task<IActionResult> ApproveOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
+            try
+            {
+                await _orderService.ApproveOrderAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-
-            order.OrderStatus = "Approved";
-            _context.Update(order);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         public async Task<IActionResult> DenyOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
-            var book = await _context.Books.FindAsync(order.BookId);
-            if (order == null)
+            try
+            {
+                await _orderService.DenyOrderAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-            book.Quantity += order.Quantity;
-            order.OrderStatus = "Denied";
-            _context.Update(order);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
         }
+
         [HttpPost]
         public async Task<IActionResult> ReturnOrder(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.Book) // Include the related Book entity
-                .FirstOrDefaultAsync(o => o.OrderId == id);
-
-            if (order == null)
+            try
+            {
+                await _orderService.ReturnOrderAsync(id);
+                return RedirectToAction(nameof(Cart));
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-
-            if (order.OrderStatus != "Approved")
+            catch (InvalidOperationException ex)
             {
-                return BadRequest("Only approved orders can be returned.");
+                return BadRequest(ex.Message);
             }
-
-            // Update the book's quantity when the order is returned
-            if (order.Book != null)
-            {
-                order.Book.Quantity += order.Quantity;
-                _context.Update(order.Book);
-            }
-
-            // Update the order status to "Returned"
-            order.OrderStatus = "Returned";
-            _context.Update(order);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Cart));
         }
-
     }
 }

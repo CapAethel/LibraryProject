@@ -7,22 +7,24 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LibraryProject.Data;
 using LibraryProject.Models;
+using LibraryProject.Services.Interface;
 
 namespace LibraryProject.Controllers
 {
     public class CategoriesController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ICategoryService _categoryService;
 
-        public CategoriesController(ApplicationDbContext context)
+        public CategoriesController(ICategoryService categoryService)
         {
-            _context = context;
+            _categoryService = categoryService;
         }
 
-        // GET: Categories
+        // GET: Category
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Categories.ToListAsync());
+            var categories = await _categoryService.GetAllCategoriesAsync();
+            return View(categories);
         }
 
         // GET: Categories/Details/5
@@ -33,8 +35,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
+            var category = await _categoryService.GetCategoryByIdAsync(id.Value);
             if (category == null)
             {
                 return NotFound();
@@ -61,8 +62,7 @@ namespace LibraryProject.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(category);
-                await _context.SaveChangesAsync();
+                await _categoryService.CreateCategoryAsync(category);
 
                 if (!string.IsNullOrEmpty(returnUrl))
                 {
@@ -71,6 +71,7 @@ namespace LibraryProject.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
+
             ViewData["ReturnUrl"] = returnUrl;
             return View(category);
         }
@@ -84,13 +85,15 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _categoryService.GetCategoryByIdAsync(id.Value);
             if (category == null)
             {
                 return NotFound();
             }
+
             return View(category);
         }
+
 
         // POST: Categories/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -108,12 +111,11 @@ namespace LibraryProject.Controllers
             {
                 try
                 {
-                    _context.Update(category);
-                    await _context.SaveChangesAsync();
+                    await _categoryService.UpdateCategoryAsync(category);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CategoryExists(category.CategoryId))
+                    if (!await _categoryService.CategoryExistsAsync(category.CategoryId))
                     {
                         return NotFound();
                     }
@@ -135,8 +137,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
+            var category = await _categoryService.GetCategoryByIdAsync(id.Value);
             if (category == null)
             {
                 return NotFound();
@@ -150,19 +151,13 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _categoryService.GetCategoryByIdAsync(id);
             if (category != null)
             {
-                _context.Categories.Remove(category);
+                await _categoryService.DeleteCategoryAsync(category);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool CategoryExists(int id)
-        {
-            return _context.Categories.Any(e => e.CategoryId == id);
         }
     }
 }

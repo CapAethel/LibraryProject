@@ -1,91 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using LibraryProject.Data;
 using LibraryProject.Models;
+using LibraryProject.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace LibraryProject.Controllers
 {
     public class BooksController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IBookService _bookService;
+        private readonly ICategoryService _categoryService;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(IBookService bookService, ICategoryService categoryService)
         {
-            _context = context;
+            _bookService = bookService;
+            _categoryService = categoryService;
         }
 
         // GET: Books
         public async Task<IActionResult> Index(string sortOrder, string searchString, string searchCategory, string searchAuthor, int? pageNumber)
         {
-            if (!UserIsAuthenticated())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             // Sorting parameters and logic
-            ViewData["TitleSortParam"] = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+            ViewData["TitleSortParam"] = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
             ViewData["AuthorSortParam"] = sortOrder == "Author" ? "author_desc" : "Author";
             ViewData["CategorySortParam"] = sortOrder == "Category" ? "category_desc" : "Category";
 
-            var books = from b in _context.Books.Include(b => b.Category)
-                        select b;
-            var categories = await _context.Categories.ToListAsync();
+            var books = await _bookService.GetBooksAsync(sortOrder, searchString, searchCategory, searchAuthor);
+
+            var categories = await _categoryService.GetAllCategoriesAsync();
             ViewBag.Categories = categories;
-            // Filtering logic
-            bool isFiltered = false;
-            if (!String.IsNullOrEmpty(searchString))
-            {
-                books = books.Where(b => b.Title.Contains(searchString));
-                isFiltered = true;
-            }
-            if (!String.IsNullOrEmpty(searchCategory))
-            {
-                books = books.Where(b => b.Category.CategoryName.Contains(searchCategory));
-                isFiltered = true;
-            }
-            if (!String.IsNullOrEmpty(searchAuthor))
-            {
-                books = books.Where(b => b.Author.Contains(searchAuthor));
-                isFiltered = true;
-            }
-
-            // Sorting logic
-            // Sorting logic
-            switch (sortOrder)
-            {
-                case "title_desc":
-                    books = books.OrderByDescending(b => b.Title);
-                    break;
-                case "Author":
-                    books = books.OrderBy(b => b.Author);
-                    break;
-                case "author_desc":
-                    books = books.OrderByDescending(b => b.Author);
-                    break;
-                case "Category":
-                    books = books.OrderBy(b => b.Category.CategoryId);
-                    break;
-                case "category_desc":
-                    books = books.OrderByDescending(b => b.Category.CategoryId);
-                    break;
-                default:
-                    books = books.OrderBy(b => b.Title);
-                    break;
-            }
-
-
-
-            // Combine with stock availability sorting
-            books = books
-                .OrderBy(b => b.Quantity > 0 ? 0 : 1)
-                .ThenBy(b => sortOrder == "title_desc" ? b.Title : b.Author);  // Combine with sorting
-
+            
             // Get the current user's role ID
             var userRoleId = GetUserRoleId();
             ViewData["UserRoleId"] = userRoleId;
@@ -94,7 +42,6 @@ namespace LibraryProject.Controllers
             int pageSize = userRoleId == 2 ? 10 : 8; // 10 for admin, 8 for user
 
             return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
-
         }
 
         private int GetUserRoleId()
@@ -104,13 +51,7 @@ namespace LibraryProject.Controllers
             {
                 return roleId;
             }
-
             return 1;
-        }
-        private bool UserIsAuthenticated()
-        {
-            // Check if the user is authenticated
-            return User.Identity != null && User.Identity.IsAuthenticated;
         }
 
         // GET: Books/Details/5
@@ -121,9 +62,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var book = await _bookService.GetBookByIdAsync(id.Value);
             if (book == null)
             {
                 return NotFound();
@@ -133,10 +72,9 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Books/Create
-        // GET: Books/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewBag.CategoryId = new SelectList(_context.Categories, "CategoryId", "CategoryName");
+            ViewData["CategoryId"] = new SelectList(await _categoryService.GetAllCategoriesAsync(), "CategoryId", "CategoryName");
             return View();
         }
 
@@ -147,16 +85,12 @@ namespace LibraryProject.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(book);
-                await _context.SaveChangesAsync();
+                await _bookService.CreateBookAsync(book);
                 return RedirectToAction(nameof(Index));
             }
-
-            // Re-populate dropdown list if model state is invalid
-            ViewBag.CategoryId = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(await _categoryService.GetAllCategoriesAsync(), "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
-
 
         // GET: Books/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -166,18 +100,16 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books.FindAsync(id);
+            var book = await _bookService.GetBookByIdAsync(id.Value);
             if (book == null)
             {
                 return NotFound();
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(await _categoryService.GetAllCategoriesAsync(), "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
 
         // POST: Books/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Author,CategoryId,BookDescription,PictureUrl,Quantity")] Book book)
@@ -191,12 +123,11 @@ namespace LibraryProject.Controllers
             {
                 try
                 {
-                    _context.Update(book);
-                    await _context.SaveChangesAsync();
+                    await _bookService.UpdateBookAsync(book);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BookExists(book.Id))
+                    if (!await _bookService.BookExistsAsync(book.Id))
                     {
                         return NotFound();
                     }
@@ -207,7 +138,7 @@ namespace LibraryProject.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", book.CategoryId);
+            ViewData["CategoryId"] = new SelectList(await _categoryService.GetAllCategoriesAsync(), "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
 
@@ -219,9 +150,7 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            var book = await _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var book = await _bookService.GetBookByIdAsync(id.Value);
             if (book == null)
             {
                 return NotFound();
@@ -235,19 +164,13 @@ namespace LibraryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _bookService.GetBookByIdAsync(id);
             if (book != null)
             {
-                _context.Books.Remove(book);
+                await _bookService.DeleteBookAsync(book);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool BookExists(int id)
-        {
-            return _context.Books.Any(e => e.Id == id);
         }
     }
 }
