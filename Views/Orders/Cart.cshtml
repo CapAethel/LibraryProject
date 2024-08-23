@@ -3,12 +3,15 @@
 <h2>Your Cart</h2>
 
 @if (!Model.Any())
+
 {
     <div class="alert alert-info" role="alert">
-        Your cart is empty. Let's find you a good book !
+        Your cart is empty. Let's find you a good book!
     </div>
 }
+
 else
+
 {
     <table class="table">
         <thead>
@@ -23,6 +26,7 @@ else
         </thead>
         <tbody>
             @foreach (var order in Model)
+
             {
                 <tr>
                     <td>@order.Book.Title</td>
@@ -31,9 +35,24 @@ else
                     <td>@order.ReturnDate</td>
                     <td>@order.OrderStatus</td>
                     <td>
-                        @if (order.OrderStatus != "Approved" && order.OrderStatus != "Denied")
+                        @if (order.OrderStatus == "Pending")
+
                         {
                             <a asp-action="Edit" asp-route-id="@order.OrderId" class="btn btn-warning">Edit</a>
+                            <form asp-action="Delete" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                                <input type="submit" value="Delete" class="btn btn-danger" />
+                            </form>
+                        }
+                        @if (order.OrderStatus == "Approved")
+
+                        {
+                            <form asp-action="ReturnOrder" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                                <input type="submit" value="Return" class="btn btn-primary" />
+                            </form>
+                        }
+                        @if (order.OrderStatus == "Denied" || order.OrderStatus == "Returned")
+
+                        {
                             <form asp-action="Delete" asp-route-id="@order.OrderId" method="post" style="display:inline;">
                                 <input type="submit" value="Delete" class="btn btn-danger" />
                             </form>
@@ -41,7 +60,6 @@ else
                     </td>
                 </tr>
             }
-
         </tbody>
     </table>
 }

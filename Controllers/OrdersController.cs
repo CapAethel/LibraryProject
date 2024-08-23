@@ -234,7 +234,7 @@ namespace LibraryProject.Controllers
             }
 
             // Return the order quantity to the book stock
-            if (order.Book != null)
+            if (order.Book != null && order.OrderStatus == "Pending")
             {
                 order.Book.Quantity += order.Quantity;
                 _context.Update(order.Book);
@@ -331,6 +331,37 @@ namespace LibraryProject.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+        [HttpPost]
+        public async Task<IActionResult> ReturnOrder(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Book) // Include the related Book entity
+                .FirstOrDefaultAsync(o => o.OrderId == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            if (order.OrderStatus != "Approved")
+            {
+                return BadRequest("Only approved orders can be returned.");
+            }
+
+            // Update the book's quantity when the order is returned
+            if (order.Book != null)
+            {
+                order.Book.Quantity += order.Quantity;
+                _context.Update(order.Book);
+            }
+
+            // Update the order status to "Returned"
+            order.OrderStatus = "Returned";
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Cart));
         }
 
     }

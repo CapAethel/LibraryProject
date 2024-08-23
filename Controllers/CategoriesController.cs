@@ -44,26 +44,37 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Categories/Create
-        public IActionResult Create()
+        // GET: Categories/Create
+        public IActionResult Create(string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl ?? Request.Headers["Referer"].ToString();
             return View();
         }
+
 
         // POST: Categories/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("CategoryId,CategoryName")] Category category)
+        public async Task<IActionResult> Create([Bind("CategoryId,CategoryName")] Category category, string returnUrl = null)
         {
             if (ModelState.IsValid)
             {
                 _context.Add(category);
                 await _context.SaveChangesAsync();
-                return RedirectToAction("Create", "Books");
+
+                if (!string.IsNullOrEmpty(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
+
+                return RedirectToAction(nameof(Index));
             }
+            ViewData["ReturnUrl"] = returnUrl;
             return View(category);
         }
+
 
         // GET: Categories/Edit/5
         public async Task<IActionResult> Edit(int? id)

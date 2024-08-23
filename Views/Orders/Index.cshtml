@@ -29,7 +29,7 @@
                 <td>@order.OrderDate.ToShortDateString()</td>
                 <td>@order.ReturnDate.ToShortDateString()</td>
                 <td>
-                    @if (order.OrderStatus != "Approved" && order.OrderStatus != "Denied")
+                    @if (order.OrderStatus != "Approved" && order.OrderStatus != "Denied" && order.OrderStatus != "Returned")
                     {
                         <form asp-action="ApproveOrder" asp-route-id="@order.OrderId" method="post" style="display:inline;">
                             <input type="submit" value="Approve" class="btn btn-success" />

@@ -1,4 +1,5 @@
-﻿@if (User.Identity.IsAuthenticated)
+﻿﻿@if (User.Identity.IsAuthenticated)
+
 {
     <div class="navbar-form d-flex align-items-center ml-auto">
         <ul class="navbar-nav">
@@ -8,12 +9,15 @@
                 </span>
             </li>
             @if (User.Identity.Name.Equals("Admin"))
+
             {
                 <li class="nav-item">
                     <a class="btn btn-info mr-2" asp-controller="Orders" asp-action="Index">Orders</a> <!-- Added margin-right -->
                 </li>
             }
+
             else
+
             {
                 <li class="nav-item">
                     <a class="btn btn-info mr-2" asp-controller="Orders" asp-action="Cart">
@@ -55,13 +59,14 @@
             .navbar-text {
                 line-height: 2.5; /* Adjust based on your navbar height */
             }
-
         </style>
 
         <form id="logoutForm" asp-controller="Account" asp-action="LogOut" method="post" class="d-none"></form>
     </div>
 }
+
 else
+
 {
     <ul class="navbar-nav d-flex align-items-center ml-auto">
         <li class="nav-item">
