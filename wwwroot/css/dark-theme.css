@@ -1,7 +1,7 @@
 ﻿/* More specific selector */
 body {
     background-color: #1d1d1d !important; /* Dark background */
-    color: #4ab1ea !important; /* Light text color */
+    color: #1a73e8; /* Light text color */
 }
 
 /* Ensure other theme-specific styles */
@@ -24,3 +24,8 @@ body {
     .dropdown-menu .dropdown-item:hover {
         color: #ffd700 !important; /* Change to desired hover color */
     }
+/* Dark Theme CSS */
+table, th, td {
+    color: #ffffff; /* Light text color for table elements */
+}
+
