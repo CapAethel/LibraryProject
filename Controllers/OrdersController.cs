@@ -320,11 +320,12 @@ namespace LibraryProject.Controllers
         public async Task<IActionResult> DenyOrder(int id)
         {
             var order = await _context.Orders.FindAsync(id);
+            var book = await _context.Books.FindAsync(order.BookId);
             if (order == null)
             {
                 return NotFound();
             }
-
+            book.Quantity += order.Quantity;
             order.OrderStatus = "Denied";
             _context.Update(order);
             await _context.SaveChangesAsync();

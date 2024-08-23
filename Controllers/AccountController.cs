@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace LibraryProject.Controllers
 {
@@ -16,6 +17,92 @@ namespace LibraryProject.Controllers
         {
             _context = context;
         }
+
+        // GET: Users/Edit/5
+        // GET: Account/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new UserEditViewModel
+            {
+                UserId = user.UserId,
+                Name = user.Name,
+                Email = user.Email
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Account/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(UserEditViewModel viewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(viewModel);
+            }
+
+            var existingUser = await _context.Users.FindAsync(viewModel.UserId);
+            if (existingUser == null)
+            {
+                return NotFound();
+            }
+
+            // Check if old password matches
+            if (!string.IsNullOrEmpty(viewModel.OldPassword) && !string.IsNullOrEmpty(viewModel.NewPassword))
+            {
+                if (existingUser.Password != viewModel.OldPassword) // Replace with proper password verification
+                {
+                    ModelState.AddModelError(string.Empty, "Old password is incorrect.");
+                    return View(viewModel);
+                }
+
+                // Update password
+                existingUser.Password = viewModel.NewPassword; // Replace with proper password hashing
+            }
+
+            existingUser.Name = viewModel.Name;
+            existingUser.Email = viewModel.Email;
+
+            try
+            {
+                _context.Update(existingUser);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserExists(existingUser.UserId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
+
+
+
+        private bool UserExists(int id)
+        {
+            return _context.Users.Any(e => e.UserId == id);
+        }
+
         public IActionResult Register()
         {
             return View();
