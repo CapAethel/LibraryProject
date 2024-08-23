@@ -28,6 +28,15 @@
                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
                     <a class="dropdown-item" asp-controller="Account" asp-action="Edit" asp-route-id="@User.FindFirst("UserId")?.Value">Manage Account</a>
                     <div class="dropdown-divider"></div>
+                    <div class="dropdown-item">
+                        <label for="themeSelect">Change Theme:</label>
+                        <select id="themeSelect" class="form-control">
+                            <option value="default">Default</option>
+                            <option value="dark">Dark</option>
+                            <option value="beige">Beige</option>
+                        </select>
+                    </div>
+                    <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="javascript:document.getElementById('logoutForm').submit();">Logout</a>
                 </div>
             </li>
@@ -73,11 +82,17 @@ else
 
                 if (rect.right > windowWidth) {
                     var overflow = rect.right - windowWidth;
-                    dropdown.style.marginLeft = '-' + overflow/2 + 'px'; // Adjust position to fit within the viewport
+                    dropdown.style.marginLeft = '-' + overflow / 2 + 'px'; // Adjust position to fit within the viewport
                 } else {
                     dropdown.style.marginLeft = '0'; // Reset position if it fits
                 }
             });
         });
+
+        // Prevent dropdown from closing when interacting with the theme selection
+        document.getElementById('themeSelect').addEventListener('click', function (e) {
+            e.stopPropagation(); // Prevent the click from closing the dropdown
+        });
     });
+
 </script>

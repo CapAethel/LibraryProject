@@ -1,0 +1,14 @@
+﻿body {
+    background-color: #ffffff;
+    color: #333333;
+}
+
+.navbar, .dropdown-menu {
+    background-color: #d2b48c;
+}
+
+.btn-primary {
+    background-color: #8b4513;
+    border-color: #8b4513;
+}
+/* Add more styles as needed */

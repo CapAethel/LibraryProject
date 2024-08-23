@@ -35,10 +35,8 @@ namespace LibraryProject.Controllers
 
             var books = from b in _context.Books.Include(b => b.Category)
                         select b;
-
             var categories = await _context.Categories.ToListAsync();
             ViewBag.Categories = categories;
-
             // Filtering logic
             bool isFiltered = false;
             if (!String.IsNullOrEmpty(searchString))
@@ -57,9 +55,7 @@ namespace LibraryProject.Controllers
                 isFiltered = true;
             }
 
-            // Set the ViewData flag
-            ViewData["Filtered"] = isFiltered;
-
+            // Sorting logic
             // Sorting logic
             switch (sortOrder)
             {
@@ -73,18 +69,22 @@ namespace LibraryProject.Controllers
                     books = books.OrderByDescending(b => b.Author);
                     break;
                 case "Category":
-                    books = books.OrderBy(b => b.Category.CategoryName);
+                    books = books.OrderBy(b => b.Category.CategoryId);
                     break;
                 case "category_desc":
-                    books = books.OrderByDescending(b => b.Category.CategoryName);
+                    books = books.OrderByDescending(b => b.Category.CategoryId);
                     break;
                 default:
                     books = books.OrderBy(b => b.Title);
                     break;
             }
 
-            // Order by stock availability (in-stock first, out-of-stock last)
-            books = books.OrderBy(b => b.Quantity > 0 ? 0 : 1).ThenBy(b => b.Title);
+
+
+            // Combine with stock availability sorting
+            books = books
+                .OrderBy(b => b.Quantity > 0 ? 0 : 1)
+                .ThenBy(b => sortOrder == "title_desc" ? b.Title : b.Author);  // Combine with sorting
 
             // Get the current user's role ID
             var userRoleId = GetUserRoleId();
@@ -94,6 +94,7 @@ namespace LibraryProject.Controllers
             int pageSize = userRoleId == 2 ? 10 : 8; // 10 for admin, 8 for user
 
             return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
+
         }
 
         private int GetUserRoleId()

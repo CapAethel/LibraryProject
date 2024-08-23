@@ -62,14 +62,14 @@ namespace LibraryProject.Controllers
             // Check if old password matches
             if (!string.IsNullOrEmpty(viewModel.OldPassword) && !string.IsNullOrEmpty(viewModel.NewPassword))
             {
-                if (existingUser.Password != viewModel.OldPassword) // Replace with proper password verification
+                if (existingUser.Password != HashPassword(viewModel.OldPassword)) // Replace with proper password verification
                 {
                     ModelState.AddModelError(string.Empty, "Old password is incorrect.");
                     return View(viewModel);
                 }
 
                 // Update password
-                existingUser.Password = viewModel.NewPassword; // Replace with proper password hashing
+                existingUser.Password = HashPassword(viewModel.NewPassword); // Replace with proper password hashing
             }
 
             existingUser.Name = viewModel.Name;
@@ -146,13 +146,15 @@ namespace LibraryProject.Controllers
         // POST: User/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login(string identifier, string password)
         {
             if (ModelState.IsValid)
             {
                 string hashedPassword = HashPassword(password);
+
+                // Search for the user by either name or email
                 var user = _context.Users
-                             .FirstOrDefault(u => u.Email == email && u.Password == hashedPassword);
+                             .FirstOrDefault(u => (u.Email == identifier || u.Name == identifier) && u.Password == hashedPassword);
 
                 if (user != null)
                 {
@@ -188,6 +190,7 @@ namespace LibraryProject.Controllers
 
             return View();
         }
+
 
 
 
