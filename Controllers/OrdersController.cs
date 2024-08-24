@@ -4,7 +4,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using LibraryProject.Models;
 using LibraryProject.Repositories.Interface;
-using LibraryProject.Services;
 using LibraryProject.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -48,9 +47,9 @@ namespace LibraryProject.Controllers
         }
 
         // GET: Orders/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            PopulateBookSelectList();
+            await PopulateBookSelectListAsync(); // Updated to async
             var order = new Order
             {
                 OrderStatus = "Pending",
@@ -90,18 +89,16 @@ namespace LibraryProject.Controllers
                 }
             }
 
-            PopulateBookSelectList();
+            await PopulateBookSelectListAsync(); // Updated to async
             return View(order);
         }
 
-        private void PopulateBookSelectList()
+        private async Task PopulateBookSelectListAsync()
         {
-            var books = _bookRepository.GetAll()
+            var books = await _bookRepository.GetAllAsync();
+            ViewData["BookId"] = new SelectList(books
                 .OrderBy(b => b.Quantity > 0 ? 0 : 1)
-                .ThenBy(b => b.Title)
-                .ToList();
-
-            ViewData["BookId"] = new SelectList(books, "Id", "Title");
+                .ThenBy(b => b.Title), "Id", "Title");
         }
 
         // GET: Orders/Edit/5
@@ -118,8 +115,8 @@ namespace LibraryProject.Controllers
                 return NotFound();
             }
 
-            PopulateBookSelectList();
-            ViewData["BookId"] = new SelectList(await _bookRepository.GetAll().ToListAsync(), "Id", "Title", order.BookId);
+            await PopulateBookSelectListAsync(); // Updated to async
+            ViewData["BookId"] = new SelectList(await _bookRepository.GetAllAsync(), "Id", "Title", order.BookId);
             return View(order);
         }
 
@@ -153,10 +150,9 @@ namespace LibraryProject.Controllers
                 }
             }
 
-            ViewData["BookId"] = new SelectList(await _bookRepository.GetAll().ToListAsync(), "Id", "Title", order.BookId);
+            ViewData["BookId"] = new SelectList(await _bookRepository.GetAllAsync(), "Id", "Title", order.BookId);
             return View(order);
         }
-
 
         // GET: Orders/Delete/5
         public async Task<IActionResult> Delete(int? id)

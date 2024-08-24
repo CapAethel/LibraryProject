@@ -41,7 +41,7 @@ namespace LibraryProject.Controllers
             // Pagination logic
             int pageSize = userRoleId == 2 ? 10 : 8; // 10 for admin, 8 for user
 
-            return View(await PaginatedList<Book>.CreateAsync(books.AsNoTracking(), pageNumber ?? 1, pageSize));
+            return View(await PaginatedList<Book>.CreateAsync(books, pageNumber ?? 1, pageSize));
         }
 
         private int GetUserRoleId()

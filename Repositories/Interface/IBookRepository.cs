@@ -1,10 +1,12 @@
 ﻿using LibraryProject.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LibraryProject.Repositories.Interface
 {
     public interface IBookRepository
     {
-        IQueryable<Book> GetAll();
+        Task<IEnumerable<Book>> GetAllAsync();
         Task<Book> GetByIdAsync(int id);
         Task CreateAsync(Book book);
         Task UpdateAsync(Book book);

@@ -6,7 +6,7 @@ namespace LibraryProject.Services.Interface
 {
     public interface IBookService
     {
-        Task<IQueryable<Book>> GetBooksAsync(string sortOrder, string searchString, string searchCategory, string searchAuthor);
+        Task<IEnumerable<Book>> GetBooksAsync(string sortOrder, string searchString, string searchCategory, string searchAuthor);
         Task<Book> GetBookByIdAsync(int id);
         Task CreateBookAsync(Book book);
         Task UpdateBookAsync(Book book);

@@ -2,9 +2,9 @@
 using LibraryProject.Models;
 using LibraryProject.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace LibraryProject.Repositories.Implementation
 {
@@ -17,11 +17,9 @@ namespace LibraryProject.Repositories.Implementation
             _context = context;
         }
 
-        public IQueryable<Book> GetAll()
+        public async Task<IEnumerable<Book>> GetAllAsync()
         {
-            var books = from b in _context.Books.Include(b => b.Category)
-                        select b;
-            return books;
+            return await _context.Books.Include(b => b.Category).ToListAsync();
         }
 
         public async Task<Book> GetByIdAsync(int id)
